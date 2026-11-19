@@ -1,0 +1,6 @@
+variant,f0.5_event,precision,recall,tp_events,fp_events,total_updates,candidates_accepted,candidates_rejected,runtime_seconds
+Complete_B4,1.0,1.0,1.0,7,0,0,0,0,12.2105652000173
+No_Severity,1.0,1.0,1.0,7,0,0,0,0,3.0160531000001356
+No_Persistence,1.0,1.0,1.0,7,0,0,0,0,10.904686900030356
+No_Degradation,1.0,1.0,1.0,7,0,0,0,0,11.11241910001263
+No_Anomaly_Masking,1.0,1.0,1.0,7,0,1,1,2,44.453849900048226

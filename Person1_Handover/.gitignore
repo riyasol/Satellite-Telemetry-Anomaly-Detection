@@ -1,0 +1,61 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints
+.ipython/
+
+# Datasets & Processed Arrays
+data/
+data/raw/
+data/processed/
+*.zip
+*.npy
+*.npz
+*.tar
+*.tar.gz
+*.gz
+*.parquet
+
+# Model checkpoints
+*.pt
+*.pth
+*.pkl
+*.joblib
+*.h5
+*.keras
+results/models/candidates/
+results/models/*/*.pt
+results/models/*.pt
+
+# Cache & Temporary
+.cache/
+cache/
+.matplotlib_cache/
+*.log
+logs/
+temporary/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+token.json

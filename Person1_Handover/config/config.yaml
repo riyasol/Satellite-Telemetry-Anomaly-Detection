@@ -1,0 +1,65 @@
+seed: 42
+device: auto
+data:
+  source: esa_adb
+  esa_raw_root: data/raw
+  esa_work_dir: data/processed/esa_adb
+  missions:
+  - Mission1
+  block_start_utc_by_mission:
+    Mission1: '2011-01-15T00:00:00Z'
+  block_duration_days: 112
+  train_fraction: 0.7
+  validation_fraction: 0.15
+  test_fraction: 0.15
+  pre_anomaly_margin_seconds: 0
+  post_anomaly_margin_seconds: 0
+model:
+  input_window: 250
+  forecast_horizon: 10
+  hidden_size: 80
+  num_layers: 2
+  dropout: 0.3
+  learning_rate: 0.001
+  batch_size: 128
+  epochs: 20
+  early_stopping_patience: 5
+  weight_decay: 0.0
+  num_workers: 0
+  gradient_clip_norm: 1.0
+  window_stride: 10
+anomaly:
+  ema_alpha: 0.2
+  threshold_quantile: 0.995
+drift:
+  detector: adwin
+  reference_window_size: 200
+  recent_window_size: 100
+  monitoring_stride: 10
+  adwin_delta: 0.002
+  ph_delta: 0.05
+  ph_threshold: 25.0
+  ph_alpha: 0.01
+  severity_weights: [0.4, 0.3, 0.3]
+  theta_low: 0.35
+  theta_high: 0.65
+  persistence_window_k: 25
+  persistence_min: 2
+  degradation_threshold_delta_q: 0.05
+  pre_anomaly_margin_seconds: 60
+  post_anomaly_margin_seconds: 60
+continual:
+  replay_capacity: 500
+  replay_ratio: 0.3
+  finetune_epochs: 3
+  finetune_lr: 0.0003
+  strong_epochs: 8
+  strong_lr: 0.001
+  validation_tolerance: 0.02
+  b2_periodic_interval: 1000
+output:
+  processed_dir: data/processed
+  model_dir: results/models
+  results_dir: results
+  plot_dir: results/plots
+

@@ -1,0 +1,21 @@
+scenario_id,scenario_name,baseline,baseline_name,f0.5_event,precision,recall,tp_events,fp_events,fn_events,total_updates,unnecessary_updates,candidates_accepted,candidates_rejected,runtime_seconds
+1,Stable Telemetry,B1,B1 - Static LSTM,0.0,0.0,0.0,0,0,7,0,0,0,0,4.84845619997941
+1,Stable Telemetry,B2,B2,0.0,0.0,0.0,0,0,7,4,4,4,1,57.31230430002324
+1,Stable Telemetry,B3,B3,0.0,0.0,0.0,0,0,7,0,0,0,0,4.13369829999283
+1,Stable Telemetry,B4,B4,0.0,0.0,0.0,0,0,7,0,0,0,0,10.475849099981133
+2,Temporary Drift,B1,B1 - Static LSTM,0.0,0.0,0.0,0,1,7,0,0,0,0,4.032911599962972
+2,Temporary Drift,B2,B2,0.0,0.0,0.0,0,1,7,3,0,3,2,47.511674500012305
+2,Temporary Drift,B3,B3,0.0,0.0,0.0,0,1,7,1,0,1,1,19.87188029999379
+2,Temporary Drift,B4,B4,0.0,0.0,0.0,0,1,7,0,0,0,0,7.386849100003019
+3,Persistent Harmful Drift,B1,B1 - Static LSTM,1.0,1.0,1.0,7,0,0,0,0,0,0,2.5533054000115953
+3,Persistent Harmful Drift,B2,B2,1.0,1.0,1.0,7,0,0,4,0,4,1,40.1614579000161
+3,Persistent Harmful Drift,B3,B3,1.0,1.0,1.0,7,0,0,5,0,5,1,57.08705019997433
+3,Persistent Harmful Drift,B4,B4,1.0,1.0,1.0,7,0,0,0,0,0,0,9.075702300004195
+4,Large Harmless Drift,B1,B1 - Static LSTM,1.0,1.0,1.0,7,0,0,0,0,0,0,3.3347116999793798
+4,Large Harmless Drift,B2,B2,1.0,1.0,1.0,7,0,0,5,5,5,0,42.69397580000805
+4,Large Harmless Drift,B3,B3,1.0,1.0,1.0,7,0,0,3,3,3,1,39.851901400019415
+4,Large Harmless Drift,B4,B4,1.0,1.0,1.0,7,0,0,0,0,0,0,8.199355599994306
+5,Moderate Harmful Drift,B1,B1 - Static LSTM,1.0,1.0,1.0,7,0,0,0,0,0,0,2.4616999000427313
+5,Moderate Harmful Drift,B2,B2,1.0,1.0,1.0,7,0,0,5,0,5,0,42.66649590001907
+5,Moderate Harmful Drift,B3,B3,1.0,1.0,1.0,7,0,0,1,0,1,0,15.128734999976587
+5,Moderate Harmful Drift,B4,B4,1.0,1.0,1.0,7,0,0,0,0,0,0,8.978663399990182

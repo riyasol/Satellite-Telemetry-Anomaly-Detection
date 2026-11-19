@@ -1,0 +1,89 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# C extensions
+*.pyd
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+.ipython/
+
+# Large Datasets & Raw Archives
+ESA-Mission1.zip
+ESA-Mission1/
+Person1_Handover.zip
+data/
+*/data/
+**/data/raw/
+**/data/processed/
+*.zip
+*.tar
+*.tar.gz
+*.gz
+*.parquet
+*.npy
+*.npz
+
+# Model checkpoints & large serialized weights
+*.pt
+*.pth
+*.pkl
+*.joblib
+*.h5
+*.keras
+**/results/models/candidates/
+**/results/models/*/*.pt
+**/results/models/*.pt
+
+# Temporary & Cache files
+.cache/
+**/cache/
+.matplotlib_cache/
+**/.matplotlib_cache/
+*.log
+logs/
+temporary/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets, Credentials, and Environment variables
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+token.json

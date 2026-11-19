@@ -1,0 +1,9 @@
+# Core Dependencies for Satellite Telemetry Anomaly Detection
+# Python >= 3.10
+
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+torch>=2.0.0
+matplotlib>=3.7.0
+pyyaml>=6.0.0

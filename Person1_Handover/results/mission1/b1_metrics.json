@@ -1,0 +1,23 @@
+{
+  "tp": 1,
+  "fp": 1,
+  "fn": 8,
+  "tn": 5045,
+  "precision": 0.5,
+  "recall": 0.1111111111111111,
+  "f0.5_point_window": 0.29411764705882354,
+  "false_alarm_rate": 0.00019817677368212446,
+  "mission": "Mission1",
+  "threshold": 0.32750271869164854,
+  "threshold_quantile": 0.995,
+  "ema_alpha": 0.2,
+  "validation_windows": 5055,
+  "normal_validation_windows": 5023,
+  "test_windows": 5055,
+  "test_windows_excluded_for_boundary_crossing": 0,
+  "test_windows_scored": 5055,
+  "window_stride": 10,
+  "score_definition": "MSE over forecast horizon and selected channels, followed by EMA across test windows.",
+  "ground_truth_definition": "Exact annotation intervals only; configured margins are used only for exclusion.",
+  "caveat": "Point-window metrics are not event-wise F0.5; event matching must be agreed with the team. Boundary-crossing annotation windows are excluded from scoring."
+}
