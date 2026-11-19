@@ -20,6 +20,29 @@ def basic_metrics(y_true, y_pred):
     return {"tp":tp,"fp":fp,"fn":fn,"tn":tn,"precision":precision,
             "recall":recall,"f0.5_point_window":f05,"false_alarm_rate":far}
 
+def operational_test_ema(scores, alpha=0.2):
+    """Causal operational EMA used after the validation threshold is frozen.
+
+    This function is deliberately independent of exact ground-truth labels.
+    P1-P2-P3 online decisions must use it or an identical configured EMA
+    implementation without feeding test labels into the stream.
+    """
+    scores = np.asarray(scores, dtype=float)
+    if not len(scores):
+        return scores.copy()
+    if not 0.0 <= float(alpha) <= 1.0:
+        raise ValueError("EMA alpha must be in [0, 1]")
+    out = np.empty(len(scores), dtype=float)
+    state = None
+    for i, score in enumerate(scores):
+        if not np.isfinite(score):
+            state = None
+            out[i] = np.nan
+            continue
+        state = float(score) if state is None else float(alpha) * float(score) + (1.0 - float(alpha)) * state
+        out[i] = state
+    return out
+
 def main():
     cfg=load_config(); m=cfg["model"]; a=cfg["anomaly"]
     device_name=cfg.get("device","auto")
@@ -67,6 +90,13 @@ def main():
         pd.DataFrame({"forecast_start_index":ti,"forecast_start_utc":pd.to_datetime(score_times,utc=True),
             "raw_mse":tscores,"ema_score":tema,"threshold":threshold,
             "predicted_anomaly":predicted.astype(np.int8),"true_target_window_anomaly":true.astype(np.int8)
+            ,"valid":np.isfinite(tema).astype(np.int8)
+            ,"eligible_for_drift":(~test_ignore & np.isfinite(tema)).astype(np.int8)
+            ,"mask_reason":np.where(
+                test_ignore,
+                "expanded_annotation_or_boundary_exclusion",
+                np.where(np.isfinite(tema), "eligible", "invalid_score")
+            )
         }).to_csv(outdir/"b1_scores.csv",index=False)
 
         plt.figure(figsize=(13,4)); plt.plot(pd.to_datetime(score_times,utc=True),tema,label="EMA residual score")

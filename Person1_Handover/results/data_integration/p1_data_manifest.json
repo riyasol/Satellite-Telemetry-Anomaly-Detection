@@ -1,0 +1,21 @@
+{
+  "manifest_type": "p1_esa_derived_data_manifest",
+  "missions": [
+    {
+      "mission": "Mission1",
+      "split_path": "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\processed\\esa_adb\\mission1\\splits.npz",
+      "metadata_path": "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\processed\\esa_adb\\mission1\\preprocessing_metadata.json",
+      "available": false
+    },
+    {
+      "mission": "Mission2",
+      "split_path": "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\processed\\esa_adb\\mission2\\splits.npz",
+      "metadata_path": "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\processed\\esa_adb\\mission2\\preprocessing_metadata.json",
+      "available": false
+    }
+  ],
+  "held_out_test_rule": "Test labels are offline-evaluation-only and are not P2/P3 update inputs.",
+  "event_tolerance": 2,
+  "event_tolerance_status": "provisional_pending_team_approval",
+  "large_artifacts_policy": "NPZ arrays and PT checkpoints remain local and must not be committed."
+}

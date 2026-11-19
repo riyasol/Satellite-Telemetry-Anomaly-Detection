@@ -27,6 +27,8 @@ data/processed/
 *.tar.gz
 *.gz
 *.parquet
+!src/data/
+!src/data/**/*.py
 
 # Model checkpoints
 *.pt
