@@ -6,8 +6,10 @@ data:
   esa_work_dir: data/processed/esa_adb
   missions:
   - Mission1
+  - Mission2
   block_start_utc_by_mission:
     Mission1: '2011-01-15T00:00:00Z'
+    Mission2: '2001-07-14T00:00:00Z'
   block_duration_days: 112
   train_fraction: 0.7
   validation_fraction: 0.15
@@ -31,6 +33,10 @@ model:
 anomaly:
   ema_alpha: 0.2
   threshold_quantile: 0.995
+evaluation:
+  event_tolerance_steps: 2
+  event_tolerance_is_provisional: true
+  event_tolerance_requires_team_approval: true
 drift:
   detector: adwin
   reference_window_size: 200
