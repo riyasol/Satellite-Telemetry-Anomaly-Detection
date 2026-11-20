@@ -1,0 +1,177 @@
+{
+  "report_type": "p1_raw_source_integrity_report",
+  "status": "blocked_raw_esa_sources_not_found",
+  "checked_locations": [
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw"
+  ],
+  "missing_expected_source_files": [
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels.csv",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\labels.csv",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_41.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_42.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_43.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_44.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_45.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_46.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels.csv",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\labels.csv",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_18.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_19.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_20.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_21.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_22.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_23.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_24.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_25.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_26.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_27.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_28.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels.csv",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\labels.csv",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_41.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_42.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_43.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_44.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_45.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_46.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels.csv",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\labels.csv",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_18.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_19.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_20.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_21.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_22.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_23.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_24.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_25.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_26.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_27.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_28.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels.csv",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\labels.csv",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_41.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_42.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_43.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_44.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_45.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_46.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels.csv",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\labels.csv",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_18.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_19.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_20.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_21.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_22.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_23.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_24.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_25.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_26.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_27.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_28.zip"
+  ],
+  "root_archives_inspected_without_extraction": [
+    {
+      "path": "C:\\IT\\RM\\Drift_Aware_Adaptive_Anomaly_Detection_ESA_Step7_Updated (2).zip",
+      "bytes": 36021818,
+      "sha256": "369d0cd6b7527950a529d2066c6ae26346c0d0b7511cf4f9e2d1317e54586cf1",
+      "expected_raw_members_found": []
+    },
+    {
+      "path": "C:\\IT\\RM\\Person1_ESA_ADB_Implementation.zip",
+      "bytes": 145065,
+      "sha256": "8ae6e66d882c125c49514aca3ac610fb804d4fb64464ee999036c6a97a50eadc",
+      "expected_raw_members_found": []
+    },
+    {
+      "path": "C:\\IT\\RM\\Person1_ESA_ADB_Implementation_v2.zip",
+      "bytes": 189456,
+      "sha256": "870868270c2b80c26e39a47b87f60042dec60ed391258e664649532015581e9e",
+      "expected_raw_members_found": []
+    },
+    {
+      "path": "C:\\IT\\RM\\Person1_Handover.zip",
+      "bytes": 23947145,
+      "sha256": "0cd1325d7412fbda22c863b3bb4f408d26a4eff452770abf982c7b34ab4b4684",
+      "expected_raw_members_found": []
+    },
+    {
+      "path": "C:\\IT\\RM\\Person1_Processed_Data.zip",
+      "bytes": 22595474,
+      "sha256": "7a7804db75b5b5d4905d43122c891a03c40164b14d715554a8c646ead21bc14b",
+      "expected_raw_members_found": []
+    },
+    {
+      "path": "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3.zip",
+      "bytes": 36522237,
+      "sha256": "5ca18ad86fb2c965892b337ae7786feff225464921a2f27fa3782ca0abc626a4",
+      "expected_raw_members_found": []
+    },
+    {
+      "path": "C:\\IT\\RM\\spacecraft_person1_current.zip",
+      "bytes": 138141,
+      "sha256": "0436d378d94c8351cc7865854f9ffbf6d503908de5dd4db60413eecc42c1f449",
+      "expected_raw_members_found": []
+    },
+    {
+      "path": "C:\\IT\\RM\\spacecraft_telemetry_before_ESA_upgrade.zip",
+      "bytes": 138141,
+      "sha256": "0436d378d94c8351cc7865854f9ffbf6d503908de5dd4db60413eecc42c1f449",
+      "expected_raw_members_found": []
+    }
+  ],
+  "source_statistics": "not_verified_not_computable",
+  "channel_timestamp_alignment": "not_verified",
+  "duplicate_missing_nan_inf_invalid_source_observations": "not_verified",
+  "chronological_order_and_source_sampling_gaps": "not_verified_from_raw_source",
+  "source_vs_processed_observation_comparison": "not_computable_raw_sources_missing",
+  "raw_training_only_normalization_recomputation": "not_computable_raw_sources_missing",
+  "available_processed_artifacts": [
+    {
+      "mission": "Mission1",
+      "path": "C:\\IT\\RM\\P1_Kaggle_Handoff\\data\\processed\\esa_adb\\mission1\\splits.npz",
+      "bytes": 3611709,
+      "sha256": "7f8923a25d0e73035d05edc882442acad2c83f4e38efc7212bb1e7e0b597ef87",
+      "metadata_path": "C:\\IT\\RM\\P1_Kaggle_Handoff\\data\\processed\\esa_adb\\mission1\\preprocessing_metadata.json",
+      "metadata_bytes": 2756,
+      "metadata_sha256": "cea903862406eed8668db8aa60d42dbb762493cc26899fe2a5056ebaa4608e85"
+    },
+    {
+      "mission": "Mission2",
+      "path": "C:\\IT\\RM\\P1_Kaggle_Handoff\\data\\processed\\esa_adb\\mission2\\splits.npz",
+      "bytes": 19035823,
+      "sha256": "780003014094b0675c7e6e42ae3ce90582be741c496ef7a1a12011a0dd7490b3",
+      "metadata_path": "C:\\IT\\RM\\P1_Kaggle_Handoff\\data\\processed\\esa_adb\\mission2\\preprocessing_metadata.json",
+      "metadata_bytes": 3340,
+      "metadata_sha256": "f4e38ea10c5cc1a5988c85ccc6ad5b70f8876e7e6f43621b537f61a5ec89d648"
+    }
+  ],
+  "checkpoint_preservation": [
+    {
+      "mission": "mission1",
+      "source_path": "C:\\IT\\RM\\P1_Kaggle_Handoff\\results\\models\\mission1\\lstm_b1.pt",
+      "source_bytes": 343493,
+      "source_sha256": "19a7d4c4e40a2f5b8251d71d2496730c8fd331aa13e5dd33b3dfdb4532be09af",
+      "backup_path": "C:\\IT\\RM\\P1_Kaggle_Handoff\\checkpoint_backups\\before_checkpoint_safety_change\\mission1_lstm_b1.pt",
+      "backup_bytes": 343493,
+      "backup_sha256": "19a7d4c4e40a2f5b8251d71d2496730c8fd331aa13e5dd33b3dfdb4532be09af",
+      "source_and_backup_match": true
+    },
+    {
+      "mission": "mission2",
+      "source_path": "C:\\IT\\RM\\P1_Kaggle_Handoff\\results\\models\\mission2\\lstm_b1.pt",
+      "source_bytes": 366149,
+      "source_sha256": "a73de4507d85f5ca323c182d93f1b87d9e8e619cdbfb6d32a4b184f1f567439c",
+      "backup_path": "C:\\IT\\RM\\P1_Kaggle_Handoff\\checkpoint_backups\\before_checkpoint_safety_change\\mission2_lstm_b1.pt",
+      "backup_bytes": 366149,
+      "backup_sha256": "a73de4507d85f5ca323c182d93f1b87d9e8e619cdbfb6d32a4b184f1f567439c",
+      "source_and_backup_match": true
+    }
+  ],
+  "notes": [
+    "No raw ESA data was extracted, copied, moved, modified, or deleted.",
+    "Processed NPZ arrays are available in P1_Kaggle_Handoff and Person2_Handover, but matching bytes does not prove raw-source provenance.",
+    "The active repository branch reports no processed NPZ or mission checkpoints in its own P1_Handover directory."
+  ]
+}

@@ -13,7 +13,11 @@ An end-to-end framework for **drift-aware adaptive anomaly detection** in multiv
 * **Project**: Enhanced Validation-Gated Continual Learning for Satellite Telemetry Anomaly Detection
 * **Dataset**: European Space Agency Telemetry Anomaly Dataset (ESA-ADB) — **Mission 1**
 * **Target Channels**: Housekeeping telemetry channels `channel_41` through `channel_46`
-* **Cadence / Span**: Nominal 30-second sampling, 112-day continuous observation block (338,689 time steps)
+* **Cadence / Span**: The supplied Mission 1 processed block contains 338,689
+  observations over the requested 112-day interval. This differs from the
+  322,560 rows implied by an uninterrupted 30-second cadence because original
+  timestamps are irregular and are not resampled. Raw ESA source verification
+  is pending in the current checkout.
 
 ---
 

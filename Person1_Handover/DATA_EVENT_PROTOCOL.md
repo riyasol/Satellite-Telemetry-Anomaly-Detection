@@ -149,3 +149,56 @@ tolerance and matching rule.
 
 No tolerance should vary by scenario or mission without an explicit config
 entry and test.
+
+## Independent ESA B1 event evaluation
+
+Use `python -m src.evaluation.esa_event_evaluation` for the static ESA B1
+baseline. It reads only `results/<mission>/b1_scores.csv` and its matching
+`b1_metrics.json`; it does not consume controlled-scenario or synthetic
+experiment outputs. It writes separate mission JSON reports and refuses to
+overwrite an existing report.
+
+Final metrics are gated by both `evaluation.event_evaluation.approval_status`
+and `source_verification_status`. Until the team approves the event protocol
+and raw-source integrity is verified, each report records a pending status and
+does not publish final TP/FP/FN or F0.5.
+
+The proposed matching rule is maximum-cardinality one-to-one matching between
+contiguous true and predicted scored-window events. A true event is expanded by
+`event_tolerance_steps` scored windows on both sides; a predicted event matches
+when its interval overlaps that expanded interval. This is a proposal, not an
+approved convention. The report includes event intervals, matched pairs,
+unmatched events, event counts, tolerance, precision, recall and F0.5 after the
+approval gate is satisfied. Undefined precision/recall/F0.5 for empty
+denominators remain `null` unless the approved config explicitly selects a
+zero-value policy.
+
+The existing general-purpose `event_metrics.py` helper is not the final ESA
+protocol: it has a default two-window tolerance and can credit a prediction to
+multiple true events. The independent evaluator avoids using it for the
+approval-gated ESA baseline.
+
+## Decisions requiring guide/team approval
+
+1. Preprocessing margins before/after each annotation, in seconds, separately
+   for each mission if cadence differences warrant it.
+2. Streaming-mask margins and their units (seconds, observations, or scored
+   windows); these are distinct from preprocessing margins.
+3. Event tolerance in scored-window units, including whether the current value
+   of two is retained.
+4. Event matching rule (one-to-one maximum-cardinality matching versus the
+   existing any-overlap/many-to-many behavior), and whether adjacent alarm
+   windows form one event.
+5. The policy for undefined precision/recall/F0.5 when there are no true or
+   predicted events.
+6. Whether candidate adaptation data must use a separate chronological
+   adaptation split. The supplied arrays contain only train/validation/test;
+   no separate adaptation split is present. The existing contract requires
+   validation for candidate acceptance and prohibits test-driven updates, but
+   does not itself require an additional split.
+7. Whether unlabelled observations may be interpreted as normal, as current
+   interval-label processing assumes.
+
+Do not revise the saved observations, labels, masks, split bounds, scalers, or
+checkpoints until any approved preprocessing-margin change is separately
+reviewed and versioned.

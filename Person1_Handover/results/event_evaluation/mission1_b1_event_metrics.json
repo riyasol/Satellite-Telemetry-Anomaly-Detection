@@ -1,0 +1,31 @@
+{
+  "mission": "Mission1",
+  "status": "pending",
+  "metrics": null,
+  "protocol": {
+    "tolerance_steps": 2,
+    "tolerance_unit": "scored windows",
+    "tolerance_is_provisional": true,
+    "matching_rule": "one_to_one_max_cardinality",
+    "matching_rule_is_provisional": true,
+    "undefined_metric_policy": null
+  },
+  "approval": {
+    "status": "pending_team_approval",
+    "reference": null,
+    "source_verification_status": "pending_raw_source_verification",
+    "source_verification_reference": null
+  },
+  "input_artifacts": {
+    "scores_path": "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\results\\mission1\\b1_scores.csv",
+    "scores_sha256": "50fb4739f7b68e343004b385bf82c39f23798a34c163bc628fd2c9eea7a1b37a",
+    "metrics_path": "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\results\\mission1\\b1_metrics.json",
+    "metrics_sha256": "1ae020cd1aaaa80508dec169a2b1d40c91994fcd625cba501c1ed66aa97867c2"
+  },
+  "pending_reasons": [
+    "event protocol guide/team approval missing",
+    "event tolerance is still provisional",
+    "event matching rule is still provisional",
+    "raw-source verification missing"
+  ]
+}

@@ -14,6 +14,7 @@ data:
   train_fraction: 0.7
   validation_fraction: 0.15
   test_fraction: 0.15
+  # Provisional placeholders; do not change existing splits before approval.
   pre_anomaly_margin_seconds: 0
   post_anomaly_margin_seconds: 0
 model:
@@ -37,6 +38,15 @@ evaluation:
   event_tolerance_steps: 2
   event_tolerance_is_provisional: true
   event_tolerance_requires_team_approval: true
+  event_evaluation:
+    approval_status: pending_team_approval
+    approval_reference: ""
+    source_verification_status: pending_raw_source_verification
+    source_verification_reference: ""
+    matching_rule: one_to_one_max_cardinality
+    matching_rule_is_provisional: true
+    undefined_metric_policy: null
+    output_dir: results/event_evaluation
 drift:
   detector: adwin
   reference_window_size: 200
@@ -52,6 +62,7 @@ drift:
   persistence_window_k: 25
   persistence_min: 2
   degradation_threshold_delta_q: 0.05
+  # Separate provisional streaming-mask settings; not the preprocessing mask.
   pre_anomaly_margin_seconds: 60
   post_anomaly_margin_seconds: 60
 continual:

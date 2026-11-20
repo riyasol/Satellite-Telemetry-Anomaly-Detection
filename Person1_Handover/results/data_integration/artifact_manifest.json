@@ -1,0 +1,2110 @@
+{
+  "manifest_type": "p1_technical_acceptance_artifact_manifest",
+  "generated_utc": "2026-11-20T10:30:57.637378+00:00",
+  "hash_algorithm": "SHA-256",
+  "manifest_self_entry": {
+    "path": "Person1_Handover/results/data_integration/artifact_manifest.json",
+    "sha256": null,
+    "reason": "A manifest cannot embed its own SHA-256 without a recursive hash; compute it externally if needed."
+  },
+  "git": {
+    "repository": "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection",
+    "branch": "feature/p1-data-contract",
+    "commit": "f8732e3ce3b6d2f87a8c1dcb4e234836fd2af3ac",
+    "status": "## feature/p1-data-contract...origin/feature/p1-data-contract\n M Person1_Handover/DATA_EVENT_PROTOCOL.md\n M Person1_Handover/README.md\n M Person1_Handover/config/config.yaml\n M Person1_Handover/src/models/train.py\n M README.md\n?? Person1_Handover/docs/\n?? Person1_Handover/results/data_integration/artifact_manifest.json\n?? Person1_Handover/results/data_integration/plots/\n?? Person1_Handover/results/data_integration/processed_artifact_audit.json\n?? Person1_Handover/results/data_integration/source_integrity_report.json\n?? Person1_Handover/results/event_evaluation/\n?? Person1_Handover/src/evaluation/esa_event_evaluation.py\n?? Person1_Handover/tests/test_checkpoint_safety.py\n?? Person1_Handover/tests/test_esa_event_evaluation.py"
+  },
+  "inventory_scope": {
+    "included": [
+      "All primary repository files except Git internals, virtual environments, and Python bytecode.",
+      "All files in the local P1 Kaggle handoff bundle, including checkpoint backups.",
+      "All files in the extracted Person2 handover copy except virtual environments and Python bytecode.",
+      "All top-level ZIP archives in C:\\IT\\RM."
+    ],
+    "excluded_directory_names": [
+      ".git",
+      ".venv",
+      "__pycache__"
+    ],
+    "raw_source_files_found": false
+  },
+  "roots": [
+    {
+      "label": "primary_repository",
+      "root": "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection",
+      "file_count": 80,
+      "files": [
+        {
+          "path": ".gitignore",
+          "bytes": 1110,
+          "sha256": "e41b6e6df2920071c7d9c25c59ef8655ece0e0cff44760696296f9b77ad7b9ff"
+        },
+        {
+          "path": "docs/final 6.pptx",
+          "bytes": 5162672,
+          "sha256": "8c84208204df4ddf23f7896d3df57c3f4fda18cddfbc2410977192db36487fd0"
+        },
+        {
+          "path": "docs/Task_Guide.pdf",
+          "bytes": 24907,
+          "sha256": "eaf1204a57a7c58dba2bc418f8dfb8f5c69b92d378a4518a1c09d852e66753c9"
+        },
+        {
+          "path": "final 6.pptx",
+          "bytes": 5162672,
+          "sha256": "8c84208204df4ddf23f7896d3df57c3f4fda18cddfbc2410977192db36487fd0"
+        },
+        {
+          "path": "Person1_Handover/.gitignore",
+          "bytes": 693,
+          "sha256": "49a79cd3148baa25ea958693af90023821fe3c90a2ca998a05c10c31487757cf"
+        },
+        {
+          "path": "Person1_Handover/config/config.yaml",
+          "bytes": 2166,
+          "sha256": "2c0d157d6dbc1d4073cb0d4e0eb3acf5cc755d714eff709b32c7089dfde0241c"
+        },
+        {
+          "path": "Person1_Handover/DATA_EVENT_PROTOCOL.md",
+          "bytes": 7727,
+          "sha256": "eb8e68ecc636e9ffad3f5b752cbbc0b67197f09e905b11c126de4d05d709494f"
+        },
+        {
+          "path": "Person1_Handover/docs/P1_ACCEPTANCE_REPORT.md",
+          "bytes": 15924,
+          "sha256": "04b4f6fee4f70ffa14d37ea341b62d4882c17169e50868e4f934b149eeae0679"
+        },
+        {
+          "path": "Person1_Handover/README.md",
+          "bytes": 7054,
+          "sha256": "b83876ea5b2bfa800413e9a95f91d394ac04c98c5253ad5b8d15e89771ca92cd"
+        },
+        {
+          "path": "Person1_Handover/requirements.txt",
+          "bytes": 176,
+          "sha256": "2f1cbc4779fe6ebe17a611ba207b1dd4acf085a3d2479eea55df2f2dd6738387"
+        },
+        {
+          "path": "Person1_Handover/results/data_integration/p1_data_manifest.json",
+          "bytes": 1113,
+          "sha256": "73ada4c8abfcb3039bf2e0242c1e4511e34eccc472bff46380f58dde34771a9e"
+        },
+        {
+          "path": "Person1_Handover/results/data_integration/plots/processed_split_channel_statistics.png",
+          "bytes": 277067,
+          "sha256": "9404058f2dca8a0c897fdd60e8a772bda4eb0fd662a5cb8ce2d1cc30633971ee"
+        },
+        {
+          "path": "Person1_Handover/results/data_integration/plots/processed_timestamp_gap_distributions.png",
+          "bytes": 79382,
+          "sha256": "41075f4898690dd29ee89e82a0579984e7a9141e41a086932c8deded59ec8b65"
+        },
+        {
+          "path": "Person1_Handover/results/data_integration/processed_artifact_audit.json",
+          "bytes": 28241,
+          "sha256": "2ad5345c311d7542c146a0f3ca9c7b02e5b03e37695f357506c8828cec2e1ebd"
+        },
+        {
+          "path": "Person1_Handover/results/data_integration/source_integrity_report.json",
+          "bytes": 12485,
+          "sha256": "d5034c1e620b020c637a507cc6194bb3f3fc8135a4073ff1f5edabc22b6f6b8a"
+        },
+        {
+          "path": "Person1_Handover/results/event_evaluation/mission1_b1_event_metrics.json",
+          "bytes": 1214,
+          "sha256": "467e81fa2329faeaf42eccc8c18370b56abea6ead1aa533b47e2307748a9bc2f"
+        },
+        {
+          "path": "Person1_Handover/results/event_evaluation/mission2_b1_event_metrics.json",
+          "bytes": 1171,
+          "sha256": "ebb8bf8121d305a11ee579eb7129437d28842a66ca17c49149e2ebad8e34615a"
+        },
+        {
+          "path": "Person1_Handover/results/mission1/ablation_study_results.csv",
+          "bytes": 407,
+          "sha256": "d27688d8a91442023bfb6f2fcee00f96e35a80f6bcd5756f08fbae85d58657f0"
+        },
+        {
+          "path": "Person1_Handover/results/mission1/b1_b4_scenario_comparison.csv",
+          "bytes": 1740,
+          "sha256": "d0791f6d6a980319704f167171c6a3cee7a1fac1914d8e813b274b6ebb7e13ae"
+        },
+        {
+          "path": "Person1_Handover/results/mission1/b1_metrics.json",
+          "bytes": 916,
+          "sha256": "1ae020cd1aaaa80508dec169a2b1d40c91994fcd625cba501c1ed66aa97867c2"
+        },
+        {
+          "path": "Person1_Handover/results/mission1/b1_scores.csv",
+          "bytes": 512877,
+          "sha256": "50fb4739f7b68e343004b385bf82c39f23798a34c163bc628fd2c9eea7a1b37a"
+        },
+        {
+          "path": "Person1_Handover/results/models/.gitkeep",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "Person1_Handover/results/models/mission1/scaler.json",
+          "bytes": 487,
+          "sha256": "4c4534934496a388b109c66a8e91c3c545578bbf149545cb9ad8102830370e73"
+        },
+        {
+          "path": "Person1_Handover/results/models/mission1/training_history.csv",
+          "bytes": 1655,
+          "sha256": "092d60b3713a13111695392ffd5c115bc0f7df2cdd71f33ee6c80d306dd9888a"
+        },
+        {
+          "path": "Person1_Handover/results/models/scaler.json",
+          "bytes": 479,
+          "sha256": "275587a37759db1ffcc3b1fa267661facab5c96075c89c907ebe22e8505b4c76"
+        },
+        {
+          "path": "Person1_Handover/results/plots/.gitkeep",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "Person1_Handover/results/plots/b1_actual_vs_predicted.png",
+          "bytes": 63059,
+          "sha256": "3c2ee54db4087bd16d8483cad2e9e9499872cdfd9588fbafd76ea34f90e99107"
+        },
+        {
+          "path": "Person1_Handover/results/plots/b1_residual_scores.png",
+          "bytes": 53145,
+          "sha256": "b0cef21ca294edbfe8d2035441ea02ad2a6a28a1172182fb7f15eb8545e9f1c9"
+        },
+        {
+          "path": "Person1_Handover/results/plots/mission1/ablation_study_f05.png",
+          "bytes": 68946,
+          "sha256": "560db1537b8ed27c7d94d031c89b1420cf4772cc5ddd1e1cccefb913ee69711a"
+        },
+        {
+          "path": "Person1_Handover/results/plots/mission1/b1_actual_vs_predicted.png",
+          "bytes": 64542,
+          "sha256": "3fd928465f2769b9b6243a6446547c62aa812298b7cfe025f432b86df34b0d17"
+        },
+        {
+          "path": "Person1_Handover/results/plots/mission1/b1_b4_f05_comparison.png",
+          "bytes": 92786,
+          "sha256": "cf77bf4af93a38c547a7da0eba79ea2422fed8e734006f4cc8f213fbf331b3dd"
+        },
+        {
+          "path": "Person1_Handover/results/plots/mission1/b1_residual_scores.png",
+          "bytes": 122641,
+          "sha256": "5491e6bdfe79f6c5b4b1d0bc984c1d5abf0dcfb633078f8419edbfaf00b5405e"
+        },
+        {
+          "path": "Person1_Handover/results/plots/mission1/drift_severity_decision_timeline.png",
+          "bytes": 442409,
+          "sha256": "ba6c1f397e9254039d034cf513722c25f9a47ee44298457bf3cec80576aba154"
+        },
+        {
+          "path": "Person1_Handover/results/plots/mission1/masking_impact_comparison.png",
+          "bytes": 44486,
+          "sha256": "3276140996129577a4411d18dfadefaee166b2b189543b7a330a27dabe31e100"
+        },
+        {
+          "path": "Person1_Handover/results/plots/mission1/unnecessary_updates_comparison.png",
+          "bytes": 62966,
+          "sha256": "61aac49f3c2e83db3f3925d4281fea7fb3fe37f719d9f5d2de862533a91b73f1"
+        },
+        {
+          "path": "Person1_Handover/run_project.py",
+          "bytes": 3147,
+          "sha256": "05c61c8364962740c5a295ea3f8e0713acff7d22f0c1ae162f47fd90337ecb17"
+        },
+        {
+          "path": "Person1_Handover/src/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "Person1_Handover/src/continual/__init__.py",
+          "bytes": 258,
+          "sha256": "b697f7e6a1189f65b4fee762781e8732f9ea5fc4725ba966c7093bb25e8b0657"
+        },
+        {
+          "path": "Person1_Handover/src/continual/candidate_trainer.py",
+          "bytes": 4907,
+          "sha256": "93a19f9fac17a33378d4a26b8ac334bd3bc2b9ad294bbfdcca641a3a9bf61ef6"
+        },
+        {
+          "path": "Person1_Handover/src/continual/replay_buffer.py",
+          "bytes": 4351,
+          "sha256": "606d59fbf717e8cd89f9eeb78e946d8f832bf136da3a191dc999d2e6ce813892"
+        },
+        {
+          "path": "Person1_Handover/src/continual/validation_gate.py",
+          "bytes": 4849,
+          "sha256": "45794f54f16c7693a5693af0a8b650f42d179dab1fc626de30ac271c6b96f270"
+        },
+        {
+          "path": "Person1_Handover/src/data/__init__.py",
+          "bytes": 56,
+          "sha256": "e7d7440a8bd6ec5fb6336031567a81017389d054173073a18a3c4ef41bd09910"
+        },
+        {
+          "path": "Person1_Handover/src/data/esa_labels.py",
+          "bytes": 2895,
+          "sha256": "a905b38c0682f51171365cc63a1da1582dc5538ceca3cd3703dfe25e79ded2d0"
+        },
+        {
+          "path": "Person1_Handover/src/data/esa_loader.py",
+          "bytes": 5289,
+          "sha256": "d5421126801764bd9100502456d4cd00e6ed88b4f32879639f405b667d9d4839"
+        },
+        {
+          "path": "Person1_Handover/src/data/generate_manifest.py",
+          "bytes": 3880,
+          "sha256": "8c83ca2daa9a1faa5db535fb17d6d0903dde497666adeaa6a7cf2bd36b0ffaf4"
+        },
+        {
+          "path": "Person1_Handover/src/data/prepare_esa.py",
+          "bytes": 7430,
+          "sha256": "8f7cfa31aecdce188b7eebb9d8570fa38082f0f1c7c2d117256b34822f3a2b1a"
+        },
+        {
+          "path": "Person1_Handover/src/data/validate_processed.py",
+          "bytes": 4669,
+          "sha256": "1b3b4980e4ee6316e4447b344cb20f9001ca9e71fe649b0cd35349dfd0621ec7"
+        },
+        {
+          "path": "Person1_Handover/src/drift/__init__.py",
+          "bytes": 583,
+          "sha256": "8dbe6da7d8676d1ead7447e3d8e89f1e911f1f84783ea33fd7d539837185639f"
+        },
+        {
+          "path": "Person1_Handover/src/drift/anomaly_masker.py",
+          "bytes": 3797,
+          "sha256": "b0b34cb3ba64e72fc0070cd527164216bc3480e055a164ad98fd081ab886aa49"
+        },
+        {
+          "path": "Person1_Handover/src/drift/decision_engine.py",
+          "bytes": 4345,
+          "sha256": "6fa2411e2a3a0f92ae7fa94ee868d7d7cdfd047db9ca8d73e070721f31f5ba19"
+        },
+        {
+          "path": "Person1_Handover/src/drift/degradation.py",
+          "bytes": 2903,
+          "sha256": "4886f171f868d936c11105b5bab4e305c1b445545bab33df47c818fe27424293"
+        },
+        {
+          "path": "Person1_Handover/src/drift/distribution_measures.py",
+          "bytes": 4030,
+          "sha256": "5b4ddbaa006fcdbe4afbbd75940adbe9ad4b1d646e82e14ae42e01917c3cfedc"
+        },
+        {
+          "path": "Person1_Handover/src/drift/persistence.py",
+          "bytes": 1859,
+          "sha256": "d867ce9f178680c6d3ae83cf5c73b86e5615636e325941e938f56d1c11f01a55"
+        },
+        {
+          "path": "Person1_Handover/src/drift/severity.py",
+          "bytes": 4090,
+          "sha256": "7b422fb75b737072bc2ccf6982953b9f2a3061f2e930713ded32a9e10bcbbe82"
+        },
+        {
+          "path": "Person1_Handover/src/drift/streaming_detectors.py",
+          "bytes": 5509,
+          "sha256": "ede21c92a0a92dca7f8e0504e108c09ae6d7d862ce1911ea56194f1b7ff058e1"
+        },
+        {
+          "path": "Person1_Handover/src/drift/synthetic_drift_tests.py",
+          "bytes": 7308,
+          "sha256": "73ae023aaa64cf7e073984146e96bc405d3d5bbb8da7a8698f412143d2889891"
+        },
+        {
+          "path": "Person1_Handover/src/drift/window_eligibility.py",
+          "bytes": 2948,
+          "sha256": "c142c363657b3220d27588375521eeb64c12f5784d14b2ffb0095c912ab01d89"
+        },
+        {
+          "path": "Person1_Handover/src/evaluation/__init__.py",
+          "bytes": 149,
+          "sha256": "7e8a52a6104aa61c3ff407c596209ed68ea766a9a608d7555df148c5424d30b4"
+        },
+        {
+          "path": "Person1_Handover/src/evaluation/ablation.py",
+          "bytes": 9321,
+          "sha256": "c6d1db01224c2d31498960419da37041098aa3c0364d882de56f2bb08dca5c83"
+        },
+        {
+          "path": "Person1_Handover/src/evaluation/benchmark.py",
+          "bytes": 16344,
+          "sha256": "6344f1210a61c116ad800a2b6fea877bb25e766b03d88f5f53f20b7f36a6f913"
+        },
+        {
+          "path": "Person1_Handover/src/evaluation/esa_event_evaluation.py",
+          "bytes": 12852,
+          "sha256": "8f9988cd41bb01b8b91822cae038dfae01798eeeeee9ac6f6e9e14f844f33fa8"
+        },
+        {
+          "path": "Person1_Handover/src/evaluation/event_metrics.py",
+          "bytes": 4450,
+          "sha256": "38a8ccdcc35e6735010e42ea49955c8900513f7d6916e3c5c32cb17dcc49f64c"
+        },
+        {
+          "path": "Person1_Handover/src/experiments/plot_drift_timeline.py",
+          "bytes": 8542,
+          "sha256": "741450be60cec6a65e7ff6e6de74a5db1318dd2e952d6b29dc975bf1c38b65fd"
+        },
+        {
+          "path": "Person1_Handover/src/experiments/run_full_experiments.py",
+          "bytes": 12827,
+          "sha256": "8ac38574acd170e80a8414756974c27e21aad1792accefd26a620cabaf0277b6"
+        },
+        {
+          "path": "Person1_Handover/src/models/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "Person1_Handover/src/models/anomaly_scoring.py",
+          "bytes": 2700,
+          "sha256": "3f618ad59fd354cd1224a47762781eb721e3d7136347a4f8f1f58302889297aa"
+        },
+        {
+          "path": "Person1_Handover/src/models/evaluate_b1.py",
+          "bytes": 7041,
+          "sha256": "4323315a310989065ea958618eba5b6ca11972d3e85519d5ce846046525ab087"
+        },
+        {
+          "path": "Person1_Handover/src/models/lstm_forecaster.py",
+          "bytes": 814,
+          "sha256": "aab1078f08488b0724fcc1f8c94368e75b9d60fff96da40792c55f289687f7c8"
+        },
+        {
+          "path": "Person1_Handover/src/models/train.py",
+          "bytes": 11480,
+          "sha256": "5c6a984bca86ebed6875d4dc5aaaf6d908c262ecea1a86ecff28c3c72f613450"
+        },
+        {
+          "path": "Person1_Handover/src/models/window_dataset.py",
+          "bytes": 1865,
+          "sha256": "6a7a7c4964ba0793aa9ce2e5114c059bd697cdebdafa199f4869381a90a66f57"
+        },
+        {
+          "path": "Person1_Handover/src/scenarios/__init__.py",
+          "bytes": 146,
+          "sha256": "b4977876ba823b0277084b96c46f20067eb78250531574ddc760095bc9e8281b"
+        },
+        {
+          "path": "Person1_Handover/src/scenarios/drift_generator.py",
+          "bytes": 5379,
+          "sha256": "4e61059ca39dda17fc92fdd9917be893c981eca6e5dbd5cdbcbb9bb77210f8a9"
+        },
+        {
+          "path": "Person1_Handover/src/utils/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "Person1_Handover/src/utils/config.py",
+          "bytes": 507,
+          "sha256": "7c2eeca09baea859ca6c1f8c4cb1c2ce689aeb3bb82a65dcc4541f87b716f31e"
+        },
+        {
+          "path": "Person1_Handover/tests/test_checkpoint_safety.py",
+          "bytes": 2064,
+          "sha256": "60ebea563a25bf0f6261cdef1321ee6fc15658c60cebe7e54174b311099fca40"
+        },
+        {
+          "path": "Person1_Handover/tests/test_esa_event_evaluation.py",
+          "bytes": 4457,
+          "sha256": "ede1f166d7139ba620569656badfa77834845770cac0483d6585610b06e43d6d"
+        },
+        {
+          "path": "Person1_Handover/tests/test_p1_data_contract.py",
+          "bytes": 4951,
+          "sha256": "568ccbed4b7a4e1eb136d3811319916e8ce8c464243a4a4831c792ce162454a2"
+        },
+        {
+          "path": "Person1_Handover_Detailed_Task_Guide_Person2_Person3.pdf",
+          "bytes": 24907,
+          "sha256": "eaf1204a57a7c58dba2bc418f8dfb8f5c69b92d378a4518a1c09d852e66753c9"
+        },
+        {
+          "path": "README.md",
+          "bytes": 13461,
+          "sha256": "7571c6c412ce95141eb6a381878f2189b5e0afbefc0414a9f243e4d4e2315488"
+        },
+        {
+          "path": "requirements.txt",
+          "bytes": 176,
+          "sha256": "2f1cbc4779fe6ebe17a611ba207b1dd4acf085a3d2479eea55df2f2dd6738387"
+        }
+      ]
+    },
+    {
+      "label": "p1_kaggle_handoff_and_checkpoint_backups",
+      "root": "C:\\IT\\RM\\P1_Kaggle_Handoff",
+      "file_count": 19,
+      "files": [
+        {
+          "path": "checkpoint_backups/before_checkpoint_safety_change/mission1_lstm_b1.pt",
+          "bytes": 343493,
+          "sha256": "19a7d4c4e40a2f5b8251d71d2496730c8fd331aa13e5dd33b3dfdb4532be09af"
+        },
+        {
+          "path": "checkpoint_backups/before_checkpoint_safety_change/mission2_lstm_b1.pt",
+          "bytes": 366149,
+          "sha256": "a73de4507d85f5ca323c182d93f1b87d9e8e619cdbfb6d32a4b184f1f567439c"
+        },
+        {
+          "path": "config/config.yaml",
+          "bytes": 3526,
+          "sha256": "000ec8efd541b1f029de9feb104b2334d458f1555e9947b6a248b3ceb937d3d9"
+        },
+        {
+          "path": "data/processed/esa_adb/mission1/preprocessing_metadata.json",
+          "bytes": 2756,
+          "sha256": "cea903862406eed8668db8aa60d42dbb762493cc26899fe2a5056ebaa4608e85"
+        },
+        {
+          "path": "data/processed/esa_adb/mission1/splits.npz",
+          "bytes": 3611709,
+          "sha256": "7f8923a25d0e73035d05edc882442acad2c83f4e38efc7212bb1e7e0b597ef87"
+        },
+        {
+          "path": "data/processed/esa_adb/mission2/preprocessing_metadata.json",
+          "bytes": 3340,
+          "sha256": "f4e38ea10c5cc1a5988c85ccc6ad5b70f8876e7e6f43621b537f61a5ec89d648"
+        },
+        {
+          "path": "data/processed/esa_adb/mission2/splits.npz",
+          "bytes": 19035823,
+          "sha256": "780003014094b0675c7e6e42ae3ce90582be741c496ef7a1a12011a0dd7490b3"
+        },
+        {
+          "path": "docs/DATA_EVENT_PROTOCOL.md",
+          "bytes": 4810,
+          "sha256": "e1558f009adf36afe6296d9e44ee8de972a1eb7d642b3dc17e12cb267c85ca9b"
+        },
+        {
+          "path": "manifest.json",
+          "bytes": 18006,
+          "sha256": "bf38788f5ac423bef5851e6a4f24fd3f9fe5a0186fb44cdce49fb0c912e30d0f"
+        },
+        {
+          "path": "README.md",
+          "bytes": 5729,
+          "sha256": "2d0573b7fe28d9c36624e8cef3369b937d1f36baa49099887b233149e1806d1f"
+        },
+        {
+          "path": "results/mission1/b1_metrics.json",
+          "bytes": 477,
+          "sha256": "1b72ca2002225a2646914814d2cebe3dffa9f695431daddf6e82817f1d3ee650"
+        },
+        {
+          "path": "results/mission2/b1_metrics.json",
+          "bytes": 477,
+          "sha256": "3af779e6dd97f6c9afc0fc5f77e07af26ebc8d7e417f296bdacebd07192cba7f"
+        },
+        {
+          "path": "results/models/mission1/lstm_b1.pt",
+          "bytes": 343493,
+          "sha256": "19a7d4c4e40a2f5b8251d71d2496730c8fd331aa13e5dd33b3dfdb4532be09af"
+        },
+        {
+          "path": "results/models/mission1/scaler.json",
+          "bytes": 487,
+          "sha256": "4c4534934496a388b109c66a8e91c3c545578bbf149545cb9ad8102830370e73"
+        },
+        {
+          "path": "results/models/mission2/lstm_b1.pt",
+          "bytes": 366149,
+          "sha256": "a73de4507d85f5ca323c182d93f1b87d9e8e619cdbfb6d32a4b184f1f567439c"
+        },
+        {
+          "path": "results/models/mission2/scaler.json",
+          "bytes": 794,
+          "sha256": "cf5464c30e04e9ec25e98662eee3b15df008ae359a811f84af3f5e5bf0f9d7b9"
+        },
+        {
+          "path": "SHA256SUMS.txt",
+          "bytes": 1802,
+          "sha256": "76738f1ebb738fe8e456cb607d5118bd00547c5b689cff75a67a89fcecc1124a"
+        },
+        {
+          "path": "source_fingerprints.json",
+          "bytes": 1355,
+          "sha256": "05c27b776d1db723d9e741f09973524af1adfed764bc7c30d304b1ca88faa5fd"
+        },
+        {
+          "path": "validation/processed_data_validation.json",
+          "bytes": 2776,
+          "sha256": "ca87857be778823b433b324175ee34650260723f9bcbc0f3acc0c9107892edd6"
+        }
+      ]
+    },
+    {
+      "label": "person2_packaged_handover_copy",
+      "root": "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover",
+      "file_count": 291,
+      "files": [
+        {
+          "path": "audit_streaming_states.py",
+          "bytes": 1377,
+          "sha256": "788399817bfd31714388a98e77c75259a6c173b78c6c25c8b20c1610c2d15532"
+        },
+        {
+          "path": "b1_patch/PATCH_NOTES.md",
+          "bytes": 1158,
+          "sha256": "c4e8eae7cefc40e4ddb6568bf2750a3a36048f8a68b8dea65d3a1c07f571ee76"
+        },
+        {
+          "path": "b1_patch/Person1_Handover/src/models/evaluate_b1.py",
+          "bytes": 6383,
+          "sha256": "e19fb6c6dc844b5bf357125ec322f4bad70c07eef757c6432eae2ae9771c10da"
+        },
+        {
+          "path": "b1_patch/Person1_Handover/tests/test_b1_evaluation_protocol.py",
+          "bytes": 765,
+          "sha256": "468e5d043dc970415fa4c506bf11767d8191b023f9520e3b331b2078a855b4e0"
+        },
+        {
+          "path": "BUILD_VERIFICATION.txt",
+          "bytes": 3559,
+          "sha256": "dfc9e58f520f9238e55264e15694a14bbf35300c8e761b733c7a262d55487b5c"
+        },
+        {
+          "path": "config/config.yaml",
+          "bytes": 3526,
+          "sha256": "000ec8efd541b1f029de9feb104b2334d458f1555e9947b6a248b3ceb937d3d9"
+        },
+        {
+          "path": "data/processed/esa_adb/mission1/preprocessing_metadata.json",
+          "bytes": 2719,
+          "sha256": "c7f006484eb6fa920f1829434273ace9ea35bf6ee71b9ba7c0189239a1362e0d"
+        },
+        {
+          "path": "data/processed/esa_adb/mission1/splits.npz",
+          "bytes": 3611709,
+          "sha256": "7f8923a25d0e73035d05edc882442acad2c83f4e38efc7212bb1e7e0b597ef87"
+        },
+        {
+          "path": "data/processed/esa_adb/mission2/preprocessing_metadata.json",
+          "bytes": 3303,
+          "sha256": "25efab76e572a108563f5433744767fe8d7270a80845fa4c0c6c10ab9c05fc0b"
+        },
+        {
+          "path": "data/processed/esa_adb/mission2/splits.npz",
+          "bytes": 19035823,
+          "sha256": "780003014094b0675c7e6e42ae3ce90582be741c496ef7a1a12011a0dd7490b3"
+        },
+        {
+          "path": "DATASET_INTEGRATION_REPORT.md",
+          "bytes": 7822,
+          "sha256": "170cf4475afe6a9c34f4ac9d75c2d39d58487bb4e0a74bd7d8d6d8c883ed7112"
+        },
+        {
+          "path": "FINAL_PROJECT_GUIDE.md",
+          "bytes": 9316,
+          "sha256": "6afcfe9fbf8c6166e15558fed385a02ada5f600b019f69c4ee552a2c17064edf"
+        },
+        {
+          "path": "inspect_archive_channels.py",
+          "bytes": 1735,
+          "sha256": "f6658b411574a9e154955b059b8c3b0a8c93a8ed88d24ec994c149e463237ca0"
+        },
+        {
+          "path": "inspect_mission2_channels.py",
+          "bytes": 1188,
+          "sha256": "b49cb365c70ed7807d1726d62b4c0621cd2f3c744e9ffc2b33af8b632b78bcd0"
+        },
+        {
+          "path": "inspect_retained_data.py",
+          "bytes": 1133,
+          "sha256": "0da9d703d59a3e87ab8b7c3c659bb5349dd422374c64d64a6da4a2bba2f5bffc"
+        },
+        {
+          "path": "NEXT_STEPS_AFTER_STEP7.md",
+          "bytes": 3794,
+          "sha256": "3a11b3d99ce61377fc31c30f1fdb4526eb178c80b215c908fc0f3758cb2d95b3"
+        },
+        {
+          "path": "PERSON2_NEXT_COMMANDS.md",
+          "bytes": 1358,
+          "sha256": "606787a6939728701636421ae843f82638659fe716d9e9ba80efbeefc00aaf0d"
+        },
+        {
+          "path": "PERSON2_PROGRESS_AND_NEXT_ACTIONS.md",
+          "bytes": 5740,
+          "sha256": "7ee4c0c2eb8c2b9188eb4a6506cd17825fc5c2f0d5f2ac28034d640864811474"
+        },
+        {
+          "path": "PERSON2_STREAMING_DECISION_ADDON.md",
+          "bytes": 7032,
+          "sha256": "4091ee5d3a383a3185c3d6579e22a8219662979d3ee9a55786db192bab77a8b8"
+        },
+        {
+          "path": "README.md",
+          "bytes": 6501,
+          "sha256": "c199558647f97e7130a53e1bb1826a668b44812adafca982f168dfb9e8247bac"
+        },
+        {
+          "path": "requirements-drift.txt",
+          "bytes": 37,
+          "sha256": "0ad7606b1b1eb5cdeb8fa6840d293edd1b796c61fd50b180ff818420d5ca58f5"
+        },
+        {
+          "path": "results/channel_stability_audit/all_missions_channel_stability.csv",
+          "bytes": 26292,
+          "sha256": "6ddf5cfcafa2b62cac8b9b19e1e9a0c1f4696962fdbeabc0bd2eb882754d3343"
+        },
+        {
+          "path": "results/channel_stability_audit/audit_summary.json",
+          "bytes": 3471,
+          "sha256": "8479fd077f017a3f2e34d7cefc17590109bd3756cad8a6dc1f49364374917866"
+        },
+        {
+          "path": "results/channel_stability_audit/mission1_channel_stability.csv",
+          "bytes": 9034,
+          "sha256": "fad82e1e717a022f6b9f8584ea9f8f1b50424b2324b46b42f84a0d660ab8beae"
+        },
+        {
+          "path": "results/channel_stability_audit/mission1_normal_channel_flags.csv",
+          "bytes": 4807,
+          "sha256": "7154257660b045efa434a0ddf5dedbde1e13bb53845dd15fa8d1d83e7f925cbb"
+        },
+        {
+          "path": "results/channel_stability_audit/mission2_archive_channel_stats.csv",
+          "bytes": 5390,
+          "sha256": "990718f44139a08e65af32339415126b88d17738a6f90f54f1d91829efcf109d"
+        },
+        {
+          "path": "results/channel_stability_audit/mission2_channel_stability.csv",
+          "bytes": 17359,
+          "sha256": "5016caff258c895bde881d5e493074e40c0d00f4ab2919a12ba2d6d92506b329"
+        },
+        {
+          "path": "results/channel_stability_audit/mission2_normal_channel_flags.csv",
+          "bytes": 9144,
+          "sha256": "3d96e1a83ac41ef8ed1d342c70f4387b8ae36a634ea33941e655b19345e6dbae"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission1/adaptation_cycle_log.jsonl",
+          "bytes": 11056,
+          "sha256": "b044d77d50f4e9a389ab2a345ac1f8ef1fa396600d4b32e24a6787679668c284"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission1/candidates/Mission1_ser_1794578620388.pt",
+          "bytes": 344821,
+          "sha256": "45bfdc47863c3ccf03798eee340622b8f39265efba91490633a1140d78060e1f"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission1/candidates/Mission1_ser_1794578683453.pt",
+          "bytes": 344821,
+          "sha256": "1d2ac8f8b16a243306d7432f9b4c19cae923f7acd6c92197d882724847990d54"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission1/candidates/Mission1_ser_1794578701290.pt",
+          "bytes": 344821,
+          "sha256": "8c1b24a223abbed32b10af36a2e740e62a9e0cd599753c86402228a30d6a049c"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission1/candidates/Mission1_ser_1794579120580.pt",
+          "bytes": 344821,
+          "sha256": "5fbd27f2b142694070529446885646c76ea4982d195b600abf205e9f76ebbc22"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission1/candidates/Mission1_ser_1794579162497.pt",
+          "bytes": 344821,
+          "sha256": "e07a34f4accef1d9d30dfe8776abf4955af58f417e3eff9bf990e22b9f912d3a"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission1/ser_smoke_summary.json",
+          "bytes": 1759,
+          "sha256": "8903d0fe033632398c6ba22dfa929cbf09d578c7ce24dd2eb337236ce823b29d"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission1/validation/validation_gate_log.jsonl",
+          "bytes": 3327,
+          "sha256": "b2cc8f2362068018a47b6005f54f0016d6ada892964e0ab69c529e04691253d6"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission2/adaptation_cycle_log.jsonl",
+          "bytes": 11815,
+          "sha256": "d037c793b0610498c44a04809d98d496fb1aea1f0b325b5453890b5bd5b78a74"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission2/candidates/Mission2_ser_1794579174747.pt",
+          "bytes": 367413,
+          "sha256": "ab1413679d4716b1b44a0824d4a1b0df9284880e61937d1f6ad15bf8313b8c11"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission2/ser_smoke_summary.json",
+          "bytes": 2019,
+          "sha256": "463378fe1cf6e53fdcba8c1ad24e22cb585d073c6490cb9e7092aca1ee2ee98e"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission2/validation/Mission2_accepted_Mission2_ser_1794578715775.pt",
+          "bytes": 367413,
+          "sha256": "fde88d4407b3f380088e2e49767fb080282d36a99ef19ccab9721500d5830470"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission2/validation/Mission2_accepted_Mission2_ser_1794579133585.pt",
+          "bytes": 367413,
+          "sha256": "ec119da1b0f6864f93f5e04c98011a5ac1717a83f25d8d7da6b86c84aa0c2247"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission2/validation/Mission2_accepted_Mission2_ser_1794579174747.pt",
+          "bytes": 367413,
+          "sha256": "ab1413679d4716b1b44a0824d4a1b0df9284880e61937d1f6ad15bf8313b8c11"
+        },
+        {
+          "path": "results/continual_learning/ser_smoke/mission2/validation/validation_gate_log.jsonl",
+          "bytes": 3359,
+          "sha256": "b4eae8994e43164fd87b3198e3aeccc933db30ef6d20f83407fdf5993f126df5"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/b1_controlled_scenario_summary.csv",
+          "bytes": 5134,
+          "sha256": "7eac3def5f0052abd102d3ce1bfba572ec388cacc8a70a21e4aff4bfc84b2658"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/b1_controlled_scenario_summary.json",
+          "bytes": 13985,
+          "sha256": "9a0336608add7adb1ecbea222d45dc0dcf8185e70142541c1594887498e9c8d8"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/b1_scenario_run.log",
+          "bytes": 12778,
+          "sha256": "58b02ea976d447da8e214124ccad495ac1584af3f1a6d22cb85388e0de03e4c0"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/CONTROLLED_SCENARIO_ANALYSIS.md",
+          "bytes": 4438,
+          "sha256": "4926f4c36a61226981bbef2aad9b870fba30c29813a7ea21c5ced9023cb90e79"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S1_stable/anomaly_labels.npy",
+          "bytes": 12128,
+          "sha256": "9105444cfd251fa6794e934d5af60785115ed438b64ad138dd067377a5674ebb"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S1_stable/b1_metrics.json",
+          "bytes": 1231,
+          "sha256": "f0cfbed365d7128206b4a2ba64e24591e8b68729a918b1f130287f70328d4084"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S1_stable/b1_score_plot.png",
+          "bytes": 67459,
+          "sha256": "99d6c7899cd482d469de4e809228c7425e0a78f4a7670f08ffb0a87a67522899"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S1_stable/b1_window_results.csv",
+          "bytes": 65269,
+          "sha256": "ec6128b022ee6bccd4215ddb1dbfad27c31512b52ed5c1999552bf4ec672e9a7"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S1_stable/drift_mask.npy",
+          "bytes": 12128,
+          "sha256": "ed96e2f0bf542315859de74a59b4c4daa1af2405fdffedd62cd55b322d9d2115"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S1_stable/metadata.json",
+          "bytes": 1674,
+          "sha256": "31dec19147e32b8e1501cc5a7958a7c031179a9a46319ff2ed45b42267927d3e"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S1_stable/modified.npy",
+          "bytes": 288128,
+          "sha256": "940e2ca07097f8043434107fd2e43d0ea36c85aa41b712b15646c8f5d8b9aa81"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S1_stable/original.npy",
+          "bytes": 288128,
+          "sha256": "dc48e5d5ea10bb1ebcf12d3089f6d9bd01f4ad6273329693a44ece0e8d977472"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S1_stable/timestamps_ns.npy",
+          "bytes": 96128,
+          "sha256": "add1350151d6290cf2207ca480816894df5983045fe09df150fce2e3d54ec46b"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S2_temporary/anomaly_labels.npy",
+          "bytes": 12128,
+          "sha256": "9044062794e12e4da219ddd37f24fb63e943022887204ebd2fa61e789e77e2de"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S2_temporary/b1_metrics.json",
+          "bytes": 1236,
+          "sha256": "04acdb0b639aa76980cba487787ef8a3c4dd74c6d73e7045856465ddfa75f23e"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S2_temporary/b1_score_plot.png",
+          "bytes": 59096,
+          "sha256": "4e3d52206b1a61bf53fb633e1b9a1b0a5ee1899eb389139c493894daae4e8a4c"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S2_temporary/b1_window_results.csv",
+          "bytes": 65252,
+          "sha256": "aea89d4d7c971ab4986f3e11445de04118688431ec6212d251030a26c2a36f46"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S2_temporary/drift_mask.npy",
+          "bytes": 12128,
+          "sha256": "db721bd4b14407f66e71ce52e4957cb65e7ead564615ae26678862c81f32021f"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S2_temporary/metadata.json",
+          "bytes": 1928,
+          "sha256": "e499b490208aff91d42d7471704c76a297a73b9e0420914fba46bbf4b5973c1a"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S2_temporary/modified.npy",
+          "bytes": 288128,
+          "sha256": "498519f35419c4a81f4fd0364bad8d8172800e59b00dae07f54833e251ec70c9"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S2_temporary/original.npy",
+          "bytes": 288128,
+          "sha256": "dc48e5d5ea10bb1ebcf12d3089f6d9bd01f4ad6273329693a44ece0e8d977472"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S2_temporary/timestamps_ns.npy",
+          "bytes": 96128,
+          "sha256": "add1350151d6290cf2207ca480816894df5983045fe09df150fce2e3d54ec46b"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S3_persistent_harmful/anomaly_labels.npy",
+          "bytes": 12128,
+          "sha256": "9044062794e12e4da219ddd37f24fb63e943022887204ebd2fa61e789e77e2de"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S3_persistent_harmful/b1_metrics.json",
+          "bytes": 1273,
+          "sha256": "2d0ca9683a7dd85826440c3961c5cd5c17f6a761d068061320f98d1fb9800b14"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S3_persistent_harmful/b1_score_plot.png",
+          "bytes": 65812,
+          "sha256": "e88aa9d1c6c485e5923ba4ab8f1c3a0f15427dbe9ce783e9172bb83d78c4a8f1"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S3_persistent_harmful/b1_window_results.csv",
+          "bytes": 64726,
+          "sha256": "96a3dcb3d25dbb2652b767188e48665d80defd1a696d5cf72af7f5a1fa8b8fa4"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S3_persistent_harmful/drift_mask.npy",
+          "bytes": 12128,
+          "sha256": "debb490328a5d0f326cefc6f4d824eac13aa51c5ab4744b4916eb2a1d0c7e7fd"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S3_persistent_harmful/metadata.json",
+          "bytes": 1964,
+          "sha256": "93fa8ebe3c9954aa8c5de599892c803c6d9f94530d9f01cf8e1c85bbc469c73c"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S3_persistent_harmful/modified.npy",
+          "bytes": 288128,
+          "sha256": "b31373d78e11d7548e02d960209ff0e38fba7ebd1a376b71b6e81f2f670eb145"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S3_persistent_harmful/original.npy",
+          "bytes": 288128,
+          "sha256": "dc48e5d5ea10bb1ebcf12d3089f6d9bd01f4ad6273329693a44ece0e8d977472"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S3_persistent_harmful/timestamps_ns.npy",
+          "bytes": 96128,
+          "sha256": "add1350151d6290cf2207ca480816894df5983045fe09df150fce2e3d54ec46b"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S4_large_harmless_candidate/anomaly_labels.npy",
+          "bytes": 12128,
+          "sha256": "9044062794e12e4da219ddd37f24fb63e943022887204ebd2fa61e789e77e2de"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S4_large_harmless_candidate/b1_metrics.json",
+          "bytes": 1343,
+          "sha256": "2beaa58494916e3e126944a13aef64529bdc5d64936af301ae821f3b948fe02c"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S4_large_harmless_candidate/b1_score_plot.png",
+          "bytes": 59274,
+          "sha256": "c7739ed872badcc134d21af9785854a7fd83449bf674471a76b2258ff1ec869b"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S4_large_harmless_candidate/b1_window_results.csv",
+          "bytes": 65229,
+          "sha256": "462fccbc7583c9ae7ca2ce107ab199cc5d5790c4c4496f3ca4b0950858b5045f"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S4_large_harmless_candidate/drift_mask.npy",
+          "bytes": 12128,
+          "sha256": "debb490328a5d0f326cefc6f4d824eac13aa51c5ab4744b4916eb2a1d0c7e7fd"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S4_large_harmless_candidate/metadata.json",
+          "bytes": 2068,
+          "sha256": "bc9d9fcfbcfb868a58167c97e20eee8d9111b7c82b53afd745d0a96fb0ea4fa5"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S4_large_harmless_candidate/modified.npy",
+          "bytes": 288128,
+          "sha256": "09674327bba114517f3f9372b9cb84940d3d4f15da87cf67a84f6e8f3413d637"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S4_large_harmless_candidate/original.npy",
+          "bytes": 288128,
+          "sha256": "dc48e5d5ea10bb1ebcf12d3089f6d9bd01f4ad6273329693a44ece0e8d977472"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S4_large_harmless_candidate/timestamps_ns.npy",
+          "bytes": 96128,
+          "sha256": "add1350151d6290cf2207ca480816894df5983045fe09df150fce2e3d54ec46b"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S5_moderate_harmful_candidate/anomaly_labels.npy",
+          "bytes": 12128,
+          "sha256": "9044062794e12e4da219ddd37f24fb63e943022887204ebd2fa61e789e77e2de"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S5_moderate_harmful_candidate/b1_metrics.json",
+          "bytes": 1385,
+          "sha256": "36080cbdbae48c722dd47ad65cc1fb9fd5c744d9cb1162d0b8210e4ef5f5bd22"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S5_moderate_harmful_candidate/b1_score_plot.png",
+          "bytes": 66607,
+          "sha256": "318e618d2d2a05c2aac31bb6c8a69343658c1c437df0cdd12376a7e1f6753e4d"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S5_moderate_harmful_candidate/b1_window_results.csv",
+          "bytes": 64804,
+          "sha256": "fc22ce0472a55f9b3da9f72f0ffe60cf46bc8e2f0da313be6413bc93b17cb485"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S5_moderate_harmful_candidate/drift_mask.npy",
+          "bytes": 12128,
+          "sha256": "debb490328a5d0f326cefc6f4d824eac13aa51c5ab4744b4916eb2a1d0c7e7fd"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S5_moderate_harmful_candidate/metadata.json",
+          "bytes": 2096,
+          "sha256": "9323af78b3a19686ef8130aaf2f9267ca2da0fb620162e2383549b6e608b6642"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S5_moderate_harmful_candidate/modified.npy",
+          "bytes": 288128,
+          "sha256": "83bf11de1aa21e457e99a2bc3b6b611c8cd301a8a55ba0dc074f0bf81a167bfe"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S5_moderate_harmful_candidate/original.npy",
+          "bytes": 288128,
+          "sha256": "dc48e5d5ea10bb1ebcf12d3089f6d9bd01f4ad6273329693a44ece0e8d977472"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/S5_moderate_harmful_candidate/timestamps_ns.npy",
+          "bytes": 96128,
+          "sha256": "add1350151d6290cf2207ca480816894df5983045fe09df150fce2e3d54ec46b"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission1/scenario_generation_summary.json",
+          "bytes": 2207,
+          "sha256": "1572fcad2ddb049020391c6c31d211d2026f026e676d2512b6de50592d3484c0"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S1_stable/anomaly_labels.npy",
+          "bytes": 12128,
+          "sha256": "9105444cfd251fa6794e934d5af60785115ed438b64ad138dd067377a5674ebb"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S1_stable/b1_metrics.json",
+          "bytes": 1277,
+          "sha256": "441b0fbc0e19a7a2d283da8913ab72b0e9db633a2ebfb3b106d399a9d685de00"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S1_stable/b1_score_plot.png",
+          "bytes": 97544,
+          "sha256": "8b0e67c30ab8724d4abcb8608d2082e05e1f9578e57dee00629005ad54fe249a"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S1_stable/b1_window_results.csv",
+          "bytes": 64502,
+          "sha256": "d99cdc7ad505e5b34404ef4a866aabdf5a778b22de65ad41cabc2b2ffadc04b0"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S1_stable/drift_mask.npy",
+          "bytes": 12128,
+          "sha256": "ed96e2f0bf542315859de74a59b4c4daa1af2405fdffedd62cd55b322d9d2115"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S1_stable/metadata.json",
+          "bytes": 1769,
+          "sha256": "5b2525dcc56bb6cefe26b4fe2393aa684131c770140210baefbf99e5a39eeacd"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S1_stable/modified.npy",
+          "bytes": 528128,
+          "sha256": "fb03c58abe0b6e7f68a99d45317a5aa632c4a83148c6144a8ae3c445ec43cd65"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S1_stable/original.npy",
+          "bytes": 528128,
+          "sha256": "36db41d382b8e926c538cde8150b51541685c4deed0d9abac0b4a55b9ca160c9"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S1_stable/timestamps_ns.npy",
+          "bytes": 96128,
+          "sha256": "c58ae21206b594de2f27bc30f367abfc44052c42fc2d1ec30e017db89b791adc"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S2_temporary/anomaly_labels.npy",
+          "bytes": 12128,
+          "sha256": "9044062794e12e4da219ddd37f24fb63e943022887204ebd2fa61e789e77e2de"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S2_temporary/b1_metrics.json",
+          "bytes": 1297,
+          "sha256": "3742e954436f47fcda7651f6f29ccc79adefed3bf9ade6f2a10d6f31020c8507"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S2_temporary/b1_score_plot.png",
+          "bytes": 86630,
+          "sha256": "d48c5bdcdf91797163b85c63292b937c57bafa5c612bec998300fccb78d61dcf"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S2_temporary/b1_window_results.csv",
+          "bytes": 64477,
+          "sha256": "1128b98581dcaf66cc6473fe590df98dd0c68212c9622a83485c4db39b150aa1"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S2_temporary/drift_mask.npy",
+          "bytes": 12128,
+          "sha256": "db721bd4b14407f66e71ce52e4957cb65e7ead564615ae26678862c81f32021f"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S2_temporary/metadata.json",
+          "bytes": 2023,
+          "sha256": "cc459269f225140cdb4f869a4f3385d63f97c6193bd3c19e83c9e50723093083"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S2_temporary/modified.npy",
+          "bytes": 528128,
+          "sha256": "4cf5ad4b23523be236628974d0642cfe78f8ca4f6e0f9deadd30326c3fabcf4e"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S2_temporary/original.npy",
+          "bytes": 528128,
+          "sha256": "36db41d382b8e926c538cde8150b51541685c4deed0d9abac0b4a55b9ca160c9"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S2_temporary/timestamps_ns.npy",
+          "bytes": 96128,
+          "sha256": "c58ae21206b594de2f27bc30f367abfc44052c42fc2d1ec30e017db89b791adc"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S3_persistent_harmful/anomaly_labels.npy",
+          "bytes": 12128,
+          "sha256": "9044062794e12e4da219ddd37f24fb63e943022887204ebd2fa61e789e77e2de"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S3_persistent_harmful/b1_metrics.json",
+          "bytes": 1307,
+          "sha256": "261ad478d8bf7cd917dcc183322836c4c5b6c38947cfcd601f02fd4cd2999173"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S3_persistent_harmful/b1_score_plot.png",
+          "bytes": 86275,
+          "sha256": "419afaeb795567029cf8766446749b6189cf7bac06907ba5ff967c38d070cbc7"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S3_persistent_harmful/b1_window_results.csv",
+          "bytes": 63814,
+          "sha256": "28f3c94ea0ee23d52f501bcd380c4a8337406bf2d635581d1395b599408815c2"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S3_persistent_harmful/drift_mask.npy",
+          "bytes": 12128,
+          "sha256": "debb490328a5d0f326cefc6f4d824eac13aa51c5ab4744b4916eb2a1d0c7e7fd"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S3_persistent_harmful/metadata.json",
+          "bytes": 2133,
+          "sha256": "4a97d30e7546d04cc3e3cdf9a0b6f37e243d6d0793702ca63911533960d5881e"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S3_persistent_harmful/modified.npy",
+          "bytes": 528128,
+          "sha256": "1e352b5a69ecc8454416a1fab91ebf109f7471fee1e4ec444cc542c163b191fb"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S3_persistent_harmful/original.npy",
+          "bytes": 528128,
+          "sha256": "36db41d382b8e926c538cde8150b51541685c4deed0d9abac0b4a55b9ca160c9"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S3_persistent_harmful/timestamps_ns.npy",
+          "bytes": 96128,
+          "sha256": "c58ae21206b594de2f27bc30f367abfc44052c42fc2d1ec30e017db89b791adc"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S4_large_harmless_candidate/anomaly_labels.npy",
+          "bytes": 12128,
+          "sha256": "9044062794e12e4da219ddd37f24fb63e943022887204ebd2fa61e789e77e2de"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S4_large_harmless_candidate/b1_metrics.json",
+          "bytes": 1403,
+          "sha256": "caef4832fc0673f75af31b99698b5c0663d9f78f17cad2f719e6769291094d1a"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S4_large_harmless_candidate/b1_score_plot.png",
+          "bytes": 88661,
+          "sha256": "0b09bd9040200ab3620627b08244feee085774dbeb6b38415766ebed143d6635"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S4_large_harmless_candidate/b1_window_results.csv",
+          "bytes": 64471,
+          "sha256": "308c86bf2b83e60d086be1f66b4983168cf9db329faa7f1ab4219478f3fd7bc8"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S4_large_harmless_candidate/drift_mask.npy",
+          "bytes": 12128,
+          "sha256": "debb490328a5d0f326cefc6f4d824eac13aa51c5ab4744b4916eb2a1d0c7e7fd"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S4_large_harmless_candidate/metadata.json",
+          "bytes": 2165,
+          "sha256": "95e0b4d91e16dd26d4d9eabc7b56e2a4a59688c38d46702b93f57184f43f2c51"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S4_large_harmless_candidate/modified.npy",
+          "bytes": 528128,
+          "sha256": "44dbb0710b4f3eb55e60f0dd73889128dfd54390f7f411bb5c7f8aa50a922b64"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S4_large_harmless_candidate/original.npy",
+          "bytes": 528128,
+          "sha256": "36db41d382b8e926c538cde8150b51541685c4deed0d9abac0b4a55b9ca160c9"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S4_large_harmless_candidate/timestamps_ns.npy",
+          "bytes": 96128,
+          "sha256": "c58ae21206b594de2f27bc30f367abfc44052c42fc2d1ec30e017db89b791adc"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S5_moderate_harmful_candidate/anomaly_labels.npy",
+          "bytes": 12128,
+          "sha256": "9044062794e12e4da219ddd37f24fb63e943022887204ebd2fa61e789e77e2de"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S5_moderate_harmful_candidate/b1_metrics.json",
+          "bytes": 1400,
+          "sha256": "ad12c40ff8974bffe61e4aceb35ab6f92a23c08dd018e1b6f1c49e238917d1ac"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S5_moderate_harmful_candidate/b1_score_plot.png",
+          "bytes": 107977,
+          "sha256": "c2c8ef86f11793ec14209863d8f9f76c80ae3bbd10d23a73a4894a3fecd48194"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S5_moderate_harmful_candidate/b1_window_results.csv",
+          "bytes": 63866,
+          "sha256": "0e2f64fadbadbca9c308786b84f54621d3cd1de7a7945aaab69c00467c7ba2b3"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S5_moderate_harmful_candidate/drift_mask.npy",
+          "bytes": 12128,
+          "sha256": "debb490328a5d0f326cefc6f4d824eac13aa51c5ab4744b4916eb2a1d0c7e7fd"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S5_moderate_harmful_candidate/metadata.json",
+          "bytes": 2191,
+          "sha256": "4c35961a08cdb992494fa60668a5a99748c3e5fd15c9aef2a30fb0eaaef4e97e"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S5_moderate_harmful_candidate/modified.npy",
+          "bytes": 528128,
+          "sha256": "6b78a8515908272982439583ec545352aed580885b5462f73998be4e801d28b5"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S5_moderate_harmful_candidate/original.npy",
+          "bytes": 528128,
+          "sha256": "36db41d382b8e926c538cde8150b51541685c4deed0d9abac0b4a55b9ca160c9"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/S5_moderate_harmful_candidate/timestamps_ns.npy",
+          "bytes": 96128,
+          "sha256": "c58ae21206b594de2f27bc30f367abfc44052c42fc2d1ec30e017db89b791adc"
+        },
+        {
+          "path": "results/controlled_esa_scenarios/mission2/scenario_generation_summary.json",
+          "bytes": 2351,
+          "sha256": "3e40e5c31fb47bb54b687f52b134d3ed901ddbd548def38c1ec1c75a1c9c600c"
+        },
+        {
+          "path": "results/controlled_experiments/b1_b4_controlled_results.csv",
+          "bytes": 4682,
+          "sha256": "7387e4b2a920e3ec588887bf8ea5018f02afe813b54cab4ff2bcbef1130d9a72"
+        },
+        {
+          "path": "results/controlled_experiments/b1_b4_decision_runtime.png",
+          "bytes": 87432,
+          "sha256": "1830e5a306968c1a464ca3a8560a22c7547af4954a6e46892c4f0fb162e7eab5"
+        },
+        {
+          "path": "results/controlled_experiments/b1_b4_event_f05.png",
+          "bytes": 147905,
+          "sha256": "01d0a1f2447b6a199253eb6ce1ae6a2817e6768190ce7ca95da9eed555a1f432"
+        },
+        {
+          "path": "results/controlled_experiments/b1_b4_update_counts.png",
+          "bytes": 96549,
+          "sha256": "ac666aeec1d829fa460b53f9f3daa59c716df72c180e38dd1693c05acef69435"
+        },
+        {
+          "path": "results/controlled_experiments/b4_ablation_results.csv",
+          "bytes": 6838,
+          "sha256": "165bcd2a56951082f43c31f9923d19f64cd6b562a6950d4e3d75606213467d38"
+        },
+        {
+          "path": "results/controlled_experiments/b4_masked_vs_unmasked.csv",
+          "bytes": 2552,
+          "sha256": "c34c52a5ec46cddfb52d4900e7fe34cc25ca14831ed2c465c33dfc5bcfc64f5c"
+        },
+        {
+          "path": "results/controlled_experiments/b4_masked_vs_unmasked.png",
+          "bytes": 95152,
+          "sha256": "f6c4f3fdc6b76cadb5f872dde1b119bf8257e96939653db4b0d3ade1d5f9bf53"
+        },
+        {
+          "path": "results/controlled_experiments/experiment_summary.json",
+          "bytes": 317,
+          "sha256": "abf59eba5a03aafe90d1b71a822f7aaf5e39b372afc17d81cf21d375c1049655"
+        },
+        {
+          "path": "results/data_integration/b1_reproduction_comparison.json",
+          "bytes": 2813,
+          "sha256": "7b1282689f49389c1c0fa532d39550eecb7e55c9b1088ee16ad4778d09cdb90c"
+        },
+        {
+          "path": "results/data_integration/data_quality_summary.json",
+          "bytes": 11548,
+          "sha256": "18582766b454f22a8469e4b65b71294d28ef3017e2c87e14d673439ab397bd09"
+        },
+        {
+          "path": "results/data_integration/mission_channel_quality_profile.csv",
+          "bytes": 3840,
+          "sha256": "dbd8da8262eb4dc3530b7c048bb2e0ab6005ab6ad92c8b7f52353fccd859fb9e"
+        },
+        {
+          "path": "results/data_integration/processed_data_validation.json",
+          "bytes": 2773,
+          "sha256": "4679d8854c794c9a7c68b6cdba100223e71b316da8b256fa16f2ccbf49fe7c6c"
+        },
+        {
+          "path": "results/drift/mission1/decision_log.csv",
+          "bytes": 806295,
+          "sha256": "eb4412c170d7641944943e43a59d780228ed982e6b47c3221f30440cb0bc88c8"
+        },
+        {
+          "path": "results/drift/mission1/decision_summary.json",
+          "bytes": 588,
+          "sha256": "956b35519714b6b5ba044bb45d4ad4e7c8c95ab1a4d7bfe125005c49f95a05b8"
+        },
+        {
+          "path": "results/drift/mission1/drift_monitoring.csv",
+          "bytes": 452007,
+          "sha256": "a539f4c43b3727415ef8552784ebbef7a7e6bdbef3df5a6679531aeeb68d5800"
+        },
+        {
+          "path": "results/drift/mission1/drift_monitoring.png",
+          "bytes": 151409,
+          "sha256": "a70bf257544568e36ab84975ad5aefa3aedaeb934c9f4e03e043b8855aac366a"
+        },
+        {
+          "path": "results/drift/mission1/drift_summary.json",
+          "bytes": 920,
+          "sha256": "f30f868da74d87f986cf65775b59781437c69c2014feda45cbb266786f06504e"
+        },
+        {
+          "path": "results/drift/mission1/eligible_update_windows.csv",
+          "bytes": 96696,
+          "sha256": "8d7cef1117f270a053935514aa286568cc8e29f074647fbb7b7ae19d768c4c5a"
+        },
+        {
+          "path": "results/drift/mission1/mask_summary.json",
+          "bytes": 498,
+          "sha256": "a32b105517b951a493cc9053645c87f07e2f23c67a75e6cdcf9c9a9d32a00df0"
+        },
+        {
+          "path": "results/drift/mission1/masked_b1_scores.csv",
+          "bytes": 580411,
+          "sha256": "6f25d06597cea8d9f5145e65baa40b9b2a17f0972d29599a3b38ddbdc991b8fe"
+        },
+        {
+          "path": "results/drift/mission1/masked_intervals.csv",
+          "bytes": 150,
+          "sha256": "f637adf04d1025e4af048d4c37a9c88f86531d8486c20ab880a56b8f9368f97f"
+        },
+        {
+          "path": "results/drift/mission1/observation_excluded_intervals.json",
+          "bytes": 121,
+          "sha256": "0de61a94170d075b6d085244cf7fb3183ef28e7edfa9e8d4bcdc57f4b4b553d1"
+        },
+        {
+          "path": "results/drift/mission1/observation_exclusion_mask.npy",
+          "bytes": 338817,
+          "sha256": "23ba5bf8ae37a23f910ea6fad060921e8e7087d1ecde704d0b9b026af6816bfd"
+        },
+        {
+          "path": "results/drift/mission1/validation_calibration.json",
+          "bytes": 907,
+          "sha256": "66ce6574ddabf85382d609c4917623d35caee18e43fcedfd115a33a3e1d60fbf"
+        },
+        {
+          "path": "results/drift/mission1/window_eligibility_summary.json",
+          "bytes": 861,
+          "sha256": "8e4489c7533f1446d20fbc97b386ebc7efb45261916a1a0045ebc8be891980d9"
+        },
+        {
+          "path": "results/drift/mission2/decision_log.csv",
+          "bytes": 1526985,
+          "sha256": "6255654ea4286cda4856529b519e9894b87a6d7ea642657fab06079e89c66b2e"
+        },
+        {
+          "path": "results/drift/mission2/decision_summary.json",
+          "bytes": 588,
+          "sha256": "22aeacf3bfa1a6c1db37eccdd4bef3b554509571aac4f29ee7e2ddab3c097348"
+        },
+        {
+          "path": "results/drift/mission2/drift_monitoring.csv",
+          "bytes": 841105,
+          "sha256": "943b45d5c1e882cdf4cbce27550e29cc44b1a2e8b29450f148ff73323baf4794"
+        },
+        {
+          "path": "results/drift/mission2/drift_monitoring.png",
+          "bytes": 174159,
+          "sha256": "12423eb9fa897025c86ddff083a8463972a5cd0f6197180b2f631efdfb5eedb6"
+        },
+        {
+          "path": "results/drift/mission2/drift_summary.json",
+          "bytes": 923,
+          "sha256": "d6d6a1c747379b94ebc1f6799c6d1cb3211ea18c26112b91b4c96f5de813c163"
+        },
+        {
+          "path": "results/drift/mission2/eligible_update_windows.csv",
+          "bytes": 209042,
+          "sha256": "c909d4299de00f188c9f2d2dc06318c4cd198ea7bce509c113684fc3cfa8344d"
+        },
+        {
+          "path": "results/drift/mission2/mask_summary.json",
+          "bytes": 503,
+          "sha256": "54efafa4faa2098418a7b90fe415f562ac8f8bc5c00f1daa2a1094ec9ed43f3c"
+        },
+        {
+          "path": "results/drift/mission2/masked_b1_scores.csv",
+          "bytes": 1114263,
+          "sha256": "0922589e235d16fa69dd4edc2eb9d553715c865878eaa3148b6d92ad23c5da0c"
+        },
+        {
+          "path": "results/drift/mission2/masked_intervals.csv",
+          "bytes": 1206,
+          "sha256": "9738af7a490559296bf401d6de4818f07169550a00bc19d333747cd4ba509b3e"
+        },
+        {
+          "path": "results/drift/mission2/observation_excluded_intervals.json",
+          "bytes": 2375,
+          "sha256": "5069c7494dda02d602abc5aab191dd0a29999b4bf0df9f7094eb3ca587cb6faf"
+        },
+        {
+          "path": "results/drift/mission2/observation_exclusion_mask.npy",
+          "bytes": 645319,
+          "sha256": "3ce7651e4f7d23772b2fd5748719d71c0b14a3e12a76ce588b137b40babda9b9"
+        },
+        {
+          "path": "results/drift/mission2/validation_calibration.json",
+          "bytes": 901,
+          "sha256": "d837727a7b4a129f3c9e358591d6df995ee525cc75416ff13d9e55bfd2b753ed"
+        },
+        {
+          "path": "results/drift/mission2/window_eligibility_summary.json",
+          "bytes": 867,
+          "sha256": "b592b387939f19e4aec71fed9d0e257d9fa5e04831b22febe7d1dd9ef63d5014"
+        },
+        {
+          "path": "results/mission1/b1_metrics.json",
+          "bytes": 1145,
+          "sha256": "29c0cbc4ba03404f7bd989869aa099e35d5c2f22fbefbf2d07244aa88fc2a4a9"
+        },
+        {
+          "path": "results/mission1/b1_scores.csv",
+          "bytes": 522944,
+          "sha256": "027ffcba558b2ec668e8e0ba0dd5f948bf13ecd3fc985d0b49e1d826a4a93671"
+        },
+        {
+          "path": "results/mission1/validation_b1_scores.csv",
+          "bytes": 677276,
+          "sha256": "36adb1ee6b42e293355191640900855fe3ef6d48af26b3ba98f7a20142fcb777"
+        },
+        {
+          "path": "results/mission1/validation_b1_scores_summary.json",
+          "bytes": 707,
+          "sha256": "ef3b2c0e6774e564fdc56989959bb46cd2a15a470907a22b8eec66588b50ba8a"
+        },
+        {
+          "path": "results/mission2/b1_metrics.json",
+          "bytes": 1160,
+          "sha256": "75b0dd251205dc61c63897fedc464bee40cf1b6b20f842e8d7305def490263c3"
+        },
+        {
+          "path": "results/mission2/b1_scores.csv",
+          "bytes": 991658,
+          "sha256": "35ebd12dca37abd44b9774ff4305021595a4d26117c3df236ab853e73d80533e"
+        },
+        {
+          "path": "results/mission2/validation_b1_scores.csv",
+          "bytes": 1282620,
+          "sha256": "6651c80c4f368798b2d811ec5657d2f77c8f1c055304b64b5e1ac915ee630e0a"
+        },
+        {
+          "path": "results/mission2/validation_b1_scores_summary.json",
+          "bytes": 708,
+          "sha256": "8cd593eb73bb7b4fc808c8ee8546ccab7ce32a6092db681bb69bc605d0b8343a"
+        },
+        {
+          "path": "results/models/.gitkeep",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "results/models/lstm_b1.pt",
+          "bytes": 343365,
+          "sha256": "b42a5ac78c97a9ef9ec256c9532dc85a5c0847ba42c61ebba84e1e7ca839c984"
+        },
+        {
+          "path": "results/models/mission1/lstm_b1.pt",
+          "bytes": 343493,
+          "sha256": "19a7d4c4e40a2f5b8251d71d2496730c8fd331aa13e5dd33b3dfdb4532be09af"
+        },
+        {
+          "path": "results/models/mission1/scaler.json",
+          "bytes": 487,
+          "sha256": "4c4534934496a388b109c66a8e91c3c545578bbf149545cb9ad8102830370e73"
+        },
+        {
+          "path": "results/models/mission1/training_history.csv",
+          "bytes": 1655,
+          "sha256": "092d60b3713a13111695392ffd5c115bc0f7df2cdd71f33ee6c80d306dd9888a"
+        },
+        {
+          "path": "results/models/mission2/lstm_b1.pt",
+          "bytes": 366149,
+          "sha256": "a73de4507d85f5ca323c182d93f1b87d9e8e619cdbfb6d32a4b184f1f567439c"
+        },
+        {
+          "path": "results/models/mission2/scaler.json",
+          "bytes": 794,
+          "sha256": "cf5464c30e04e9ec25e98662eee3b15df008ae359a811f84af3f5e5bf0f9d7b9"
+        },
+        {
+          "path": "results/models/mission2/training_history.csv",
+          "bytes": 1644,
+          "sha256": "56cc25f755d0004089b33dbfff18106fff2612d0c8d3070e311696cf62badc4a"
+        },
+        {
+          "path": "results/models/scaler.json",
+          "bytes": 479,
+          "sha256": "275587a37759db1ffcc3b1fa267661facab5c96075c89c907ebe22e8505b4c76"
+        },
+        {
+          "path": "results/plots/.gitkeep",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "results/plots/b1_actual_vs_predicted.png",
+          "bytes": 63059,
+          "sha256": "3c2ee54db4087bd16d8483cad2e9e9499872cdfd9588fbafd76ea34f90e99107"
+        },
+        {
+          "path": "results/plots/b1_residual_scores.png",
+          "bytes": 53145,
+          "sha256": "b0cef21ca294edbfe8d2035441ea02ad2a6a28a1172182fb7f15eb8545e9f1c9"
+        },
+        {
+          "path": "results/plots/mission1/b1_actual_vs_predicted.png",
+          "bytes": 65355,
+          "sha256": "12b8a10ebefd624ca4b1917ccf1669a2571f2d6578dc880ca81154e456a3484f"
+        },
+        {
+          "path": "results/plots/mission1/b1_residual_scores.png",
+          "bytes": 114932,
+          "sha256": "4128b02a1d9c036644c0b771b1e01bc2710529974bfba06e7bfa70016bebf07e"
+        },
+        {
+          "path": "results/plots/mission2/b1_actual_vs_predicted.png",
+          "bytes": 63884,
+          "sha256": "0324e34f99f0650c1298fea6a4c82e0226bcc8d2321e7129e3162810c8ad485d"
+        },
+        {
+          "path": "results/plots/mission2/b1_residual_scores.png",
+          "bytes": 39959,
+          "sha256": "ba41481130204e2e12423312986dc252f79aee883fcc901848bc2e0e5f841e64"
+        },
+        {
+          "path": "results/streaming_decision_validation/all_scenarios_summary.csv",
+          "bytes": 4668,
+          "sha256": "bde28ede97dde0bb8ffcb0a68d7ad1cb322356c02b6677ad94f6540d72153a75"
+        },
+        {
+          "path": "results/streaming_decision_validation/all_scenarios_summary.json",
+          "bytes": 9376,
+          "sha256": "958d9053f2bf7eb75393bff2a70bff87b0e1330ca851c207856b0f2759d81fa1"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission1/S1_stable/streaming_decision_packets.csv",
+          "bytes": 143758,
+          "sha256": "296242daf2906075f5e596ed67800c24c7d480fee005b570468f1b01ce806e57"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission1/S1_stable/streaming_summary.json",
+          "bytes": 874,
+          "sha256": "5c21409842e200d732ffa97ddb563ed2ee5f55cffbfdd5532717bfed47178bdb"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission1/S2_temporary/streaming_decision_packets.csv",
+          "bytes": 144027,
+          "sha256": "213f1e1d3ec7dff0239d03cdd8608eb9bfef254d04979e593d775118631f28ee"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission1/S2_temporary/streaming_summary.json",
+          "bytes": 877,
+          "sha256": "04aaaae1c5bdb3d052b1a62c3266e2b8597687a51d6016268a32092bf6c0b75a"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission1/S3_persistent_harmful/streaming_decision_packets.csv",
+          "bytes": 159669,
+          "sha256": "692378b1a03cab29aee0965133dfd26e13c979acbb19f2329c2e7f7ff9da8453"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission1/S3_persistent_harmful/streaming_summary.json",
+          "bytes": 864,
+          "sha256": "279d06392bcfb932e5e4bf8c54a7a9ba7e8aa27b4cec4dc5fe0666cf5736c41b"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission1/S4_large_harmless_candidate/streaming_decision_packets.csv",
+          "bytes": 143939,
+          "sha256": "f871030df0b07e1e1a640ed48d0546ac7338690912b3d1dfca4c69c616a455e8"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission1/S4_large_harmless_candidate/streaming_summary.json",
+          "bytes": 892,
+          "sha256": "809366d148283c3b391c82a2ce49c405e5daedfe68be90f8de138f33706337b6"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission1/S5_moderate_harmful_candidate/streaming_decision_packets.csv",
+          "bytes": 157156,
+          "sha256": "1664c00ad497cd9b4478b0386cfc07ed427eec425c330c4540cd472c63434874"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission1/S5_moderate_harmful_candidate/streaming_summary.json",
+          "bytes": 895,
+          "sha256": "444f570d861d4d3819bfff0522621c26de05a291c60250861951100285083362"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission2/S1_stable/streaming_decision_packets.csv",
+          "bytes": 144308,
+          "sha256": "61547ed0b0ea5e364924955bd2a875476789d988eecb0b3e9318c55737f14fc2"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission2/S1_stable/streaming_summary.json",
+          "bytes": 874,
+          "sha256": "ee63716cbf87a9a32dec246852df8dbe392a107a2f26bc62788a2deae5c35764"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission2/S2_temporary/streaming_decision_packets.csv",
+          "bytes": 144330,
+          "sha256": "febfda7e318d93261a0fe5d11f79033da11b4151ccd329eb145fbb0604dc00ce"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission2/S2_temporary/streaming_summary.json",
+          "bytes": 877,
+          "sha256": "5d087d2a359da650fac3c54b81a985c29d6847d25552793c340c1c359f8f75ce"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission2/S3_persistent_harmful/streaming_decision_packets.csv",
+          "bytes": 158968,
+          "sha256": "8b7ca1336d563d637998015778a9a77db2ae4fc0dede5a18f761fbf8e49bae3a"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission2/S3_persistent_harmful/streaming_summary.json",
+          "bytes": 886,
+          "sha256": "ce85787bd5b4bd83ec97dd99ef4982da21264f165af9c5571811e6ddb777af13"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission2/S4_large_harmless_candidate/streaming_decision_packets.csv",
+          "bytes": 144355,
+          "sha256": "7f4f02ee7de896f7534437f7c63d058801eeab56623a21b598852e62bbd62a32"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission2/S4_large_harmless_candidate/streaming_summary.json",
+          "bytes": 892,
+          "sha256": "039a1157fe85e7a5d3f2fad8c550c29127103383f2e97c0188f02c3363c5dc6a"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission2/S5_moderate_harmful_candidate/streaming_decision_packets.csv",
+          "bytes": 158757,
+          "sha256": "158f28bde3f3622e4116836d091f2aeecfc1db666b5dd47404539f66de0889da"
+        },
+        {
+          "path": "results/streaming_decision_validation/mission2/S5_moderate_harmful_candidate/streaming_summary.json",
+          "bytes": 894,
+          "sha256": "671aeb713275c42a50541e75ee66734573b1646c8779e0080979bd56671cde13"
+        },
+        {
+          "path": "run_streaming_scenario_validation.py",
+          "bytes": 3560,
+          "sha256": "e3a264d2f5039bce2f52f953b8ee626cdb34d78de970fd8e51a9bd8fd4803ab8"
+        },
+        {
+          "path": "SER_METHOD_REFERENCE.md",
+          "bytes": 6639,
+          "sha256": "bec454716f38f187b776ce1f6df07b22003c11ff31efb1ef21efa9f83cc9ab34"
+        },
+        {
+          "path": "src/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "src/data/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "src/data/esa_labels.py",
+          "bytes": 2597,
+          "sha256": "d2a77ecf324025538e939661de5183dd3f1dc20f47e1edd4775cff23be3c89dc"
+        },
+        {
+          "path": "src/data/esa_loader.py",
+          "bytes": 5194,
+          "sha256": "0752815a5f30ec769c1aa7243c63a1c3d32ea42c7195e971d59d5564b0a010a5"
+        },
+        {
+          "path": "src/data/inspect_dataset.py",
+          "bytes": 1251,
+          "sha256": "b99ed7df0cac7f8c2f3a279e8f5dce8b9141b6268e3bde24f0d19af5035376eb"
+        },
+        {
+          "path": "src/data/make_synthetic_demo.py",
+          "bytes": 960,
+          "sha256": "2141571bc7914d09d6f7065328b8ccc94228dafbc97cb9bf57867b78002082a1"
+        },
+        {
+          "path": "src/data/prepare_esa.py",
+          "bytes": 6878,
+          "sha256": "e199fbd583654605bab24fcb3ce67b0254fe956f0d7e68ba9493e503e1c963fe"
+        },
+        {
+          "path": "src/data/preprocess.py",
+          "bytes": 5777,
+          "sha256": "8785c72ca7b0ef79b7921e09d6b8ff2b2c951ffcd320c9640533da1c56b343a3"
+        },
+        {
+          "path": "src/data/profile_alignment.py",
+          "bytes": 1376,
+          "sha256": "96606711a5fb21cd0be6ea311d29b5db0a60d5701a7044d287f72fad3a568e12"
+        },
+        {
+          "path": "src/data/validate_processed.py",
+          "bytes": 5659,
+          "sha256": "28aceb537d8042fead188c3c50d66df243cce1fcbd32f63a40b629da3fc6f2c9"
+        },
+        {
+          "path": "src/drift/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "src/drift/adaptive_controller.py",
+          "bytes": 3918,
+          "sha256": "03f5bea1f9d4862802b5e1435427f1e4a2af5774d12adcffcb101b74e39e5c84"
+        },
+        {
+          "path": "src/drift/adwin_monitor.py",
+          "bytes": 3729,
+          "sha256": "79e9d64a5961975100ad421d07235db2cb993d32b0740d22a9c3287d4843938a"
+        },
+        {
+          "path": "src/drift/anomaly_mask.py",
+          "bytes": 2161,
+          "sha256": "034e8e45db1f29ed28f4fb1ca9da409d7d97838fdc65ef2f6ae49b10def50761"
+        },
+        {
+          "path": "src/drift/audit_channel_stability.py",
+          "bytes": 3634,
+          "sha256": "f3508121482e25d416e4c5f91ee2ae63859da2c8843d4f817fe16b778b620103"
+        },
+        {
+          "path": "src/drift/calibrate_severity.py",
+          "bytes": 4600,
+          "sha256": "4f756c0ea462f917acda61497ecea6ac34def668dd1cdffe4dc22443b8b6cdf2"
+        },
+        {
+          "path": "src/drift/candidate_update.py",
+          "bytes": 12543,
+          "sha256": "fb3e598a17cd0909682f11fdf8cb4562920fdd5ec173369a6700c705ace8b37f"
+        },
+        {
+          "path": "src/drift/controlled_scenarios.py",
+          "bytes": 2824,
+          "sha256": "d90426f45b9aa82f8d824f3a072359213e087bf9652304bcdb06124087f3f41e"
+        },
+        {
+          "path": "src/drift/decision.py",
+          "bytes": 1753,
+          "sha256": "56caed1d0a0cced9be6d8788878ece132d4b81a19cc2aad9f7f1259f4753eea5"
+        },
+        {
+          "path": "src/drift/degradation.py",
+          "bytes": 642,
+          "sha256": "3363d7cd28e44e9a38f59ac6a973752941d2bcc85d7d85d6314ad959cffb735a"
+        },
+        {
+          "path": "src/drift/distribution_metrics.py",
+          "bytes": 2613,
+          "sha256": "a0ab7f36a9dead58e9d5efb69e42e21823a6361718710901315b75dcb44e3143"
+        },
+        {
+          "path": "src/drift/esa_controlled_scenarios.py",
+          "bytes": 10287,
+          "sha256": "928f3034b7b1171c6fe9e92b019427cab31fb9b0561ec194d40320c42f46e679"
+        },
+        {
+          "path": "src/drift/experiment_metrics.py",
+          "bytes": 1202,
+          "sha256": "7a401475fbf599204ac416e9d600bb44963345ffb2b3aa818990614969571697"
+        },
+        {
+          "path": "src/drift/persistence.py",
+          "bytes": 1427,
+          "sha256": "896d0a8c6df869f4d51a3235e67d5e08e0f96372b92bb4e190da5851c0a72f01"
+        },
+        {
+          "path": "src/drift/replay_buffer.py",
+          "bytes": 5082,
+          "sha256": "3a9520262b28b36f06277a0f4de80d5706ef7ab4684be37decbab59e0f93fd6a"
+        },
+        {
+          "path": "src/drift/run_controlled_experiments.py",
+          "bytes": 13785,
+          "sha256": "0525b0f2f442b5433edf27db6ed2b3b59dbe64f89867771aae253b067b5511b8"
+        },
+        {
+          "path": "src/drift/run_decision.py",
+          "bytes": 4231,
+          "sha256": "42e4430d40b11799fec19299b22a88f43e65b8e5978ad61b648011a095c6e8bd"
+        },
+        {
+          "path": "src/drift/run_drift_monitor.py",
+          "bytes": 7428,
+          "sha256": "9d68f490e61ba01e08a5f57cb178d53732ef0a575abb0111a952e56bce5bba5e"
+        },
+        {
+          "path": "src/drift/run_esa_scenario_b1.py",
+          "bytes": 7475,
+          "sha256": "2f4939573c861369ae31b0775cb0074ddc7ad3b9a2fa9f5e0891e550c623933e"
+        },
+        {
+          "path": "src/drift/run_esa_ser_smoke.py",
+          "bytes": 8754,
+          "sha256": "645b3e821dc4be64f844d2596d2ae884bd591bba73aa5be552569db62b42500c"
+        },
+        {
+          "path": "src/drift/run_masking.py",
+          "bytes": 2547,
+          "sha256": "93c50d1e6f6a2ff87ae6005eabca4f8b088db43070606e1fa2a799e6db23148a"
+        },
+        {
+          "path": "src/drift/run_update_demo.py",
+          "bytes": 1995,
+          "sha256": "e4cf5f7a25614099f4164697c6280cbc4b8127a6bd1f0a9f23bf969af76d2f05"
+        },
+        {
+          "path": "src/drift/run_window_eligibility.py",
+          "bytes": 3553,
+          "sha256": "ee8b9f582f03a3c64c5cdb35f55d8493a98e43edab7257e2df8673f45f9d0dd3"
+        },
+        {
+          "path": "src/drift/ser_update.py",
+          "bytes": 2105,
+          "sha256": "227af2e50616790ff8f7d338a325ae989e8d6b9b5cb4c26940e99e75f862b0b4"
+        },
+        {
+          "path": "src/drift/severity.py",
+          "bytes": 1762,
+          "sha256": "a807bf48d734e456d01ea6d616254d50d6b8255956ee28493a646c249ce962b4"
+        },
+        {
+          "path": "src/drift/streaming_decision.py",
+          "bytes": 13290,
+          "sha256": "bee7ae275eaa46c8a4e223ec0bf4f75a7b7486a8950e93e2fb4af8e2cb5ee6c1"
+        },
+        {
+          "path": "src/drift/window_eligibility.py",
+          "bytes": 3016,
+          "sha256": "fca7917191c60e3c448e355b65b291094f29350f080940603bacdaccc3a3750e"
+        },
+        {
+          "path": "src/models/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "src/models/anomaly_scoring.py",
+          "bytes": 2638,
+          "sha256": "6cb723f25a6dde173940930e3d179fa9e8f5e9e691c39a722f67f85811c45ea3"
+        },
+        {
+          "path": "src/models/evaluate_b1.py",
+          "bytes": 6383,
+          "sha256": "e19fb6c6dc844b5bf357125ec322f4bad70c07eef757c6432eae2ae9771c10da"
+        },
+        {
+          "path": "src/models/evaluate_b1.py.backup",
+          "bytes": 5672,
+          "sha256": "f0ed57dbe78d4b59b8e11fddc5e966bc18cc9b01722e46b1987688a27c64441b"
+        },
+        {
+          "path": "src/models/export_validation_scores.py",
+          "bytes": 4817,
+          "sha256": "acc63c81e8532566ea2c5436a88f1002254f0fc19b81978d67f67082b8e32ef4"
+        },
+        {
+          "path": "src/models/lstm_forecaster.py",
+          "bytes": 794,
+          "sha256": "23accb08e2aab3603756436e419263afccd1c50efc17afe04dc94602c4ede893"
+        },
+        {
+          "path": "src/models/train.py",
+          "bytes": 8803,
+          "sha256": "83f9459fb65153efdbd22404364a7a87926c0501b8e67753022af2dc94faf735"
+        },
+        {
+          "path": "src/models/window_dataset.py",
+          "bytes": 1829,
+          "sha256": "f7e2f6fcacd0a657c7b9f1a46d0e48e61354f936204ed4d39a127f71607a622a"
+        },
+        {
+          "path": "src/utils/__init__.py",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "src/utils/config.py",
+          "bytes": 490,
+          "sha256": "e989a91660829fb46eedcbe37ea0d02c0a62282c8474dd6bfbc68e0a927c0df2"
+        },
+        {
+          "path": "STEP_01_MASKING_README.md",
+          "bytes": 1281,
+          "sha256": "a39ea98c677e64d9e7b2e15b37a982085404b061a2b4950d6c5cd78bcfd6601a"
+        },
+        {
+          "path": "STEP_02_DRIFT_MONITORING_README.md",
+          "bytes": 3961,
+          "sha256": "afb22a80df1bf54daf33deb27e78317dfbf20027db349e16a468951d3c28679b"
+        },
+        {
+          "path": "STEP_03_DECISION_LAYER_README.md",
+          "bytes": 1589,
+          "sha256": "32e98e4c316679dbbe3b7d3a76f300fd1d1f5ad718ff118f9631a93e8c752636"
+        },
+        {
+          "path": "STEP_05_INTEGRATION_README.md",
+          "bytes": 3752,
+          "sha256": "caf031405785371eb8ae5d57317bdb35735111b4fc2f19ff638a8b453f8770a4"
+        },
+        {
+          "path": "STEP_06_SER_AND_REAL_LSTM_INTEGRATION_README.md",
+          "bytes": 2813,
+          "sha256": "a5bb3004ac773666a7fac5e25d687ca1a67738a7ba6391dfa552e39505979128"
+        },
+        {
+          "path": "tests/test_adaptive_controller.py",
+          "bytes": 3374,
+          "sha256": "7424572b269f642a453ba48f72e2d4444ef7abf5a84571825298a38d30438807"
+        },
+        {
+          "path": "tests/test_adwin_monitor.py",
+          "bytes": 1204,
+          "sha256": "9494f9576df61a73696c56f66feff21cdc8d3e10e89a5f79791ff9e76247eb68"
+        },
+        {
+          "path": "tests/test_anomaly_mask.py",
+          "bytes": 1024,
+          "sha256": "ccea25c85cc7b3cb2d0f6b38cfafe6fad6d37296ceb0436778e1f05b4c908fa0"
+        },
+        {
+          "path": "tests/test_b1_evaluation_protocol.py",
+          "bytes": 765,
+          "sha256": "468e5d043dc970415fa4c506bf11767d8191b023f9520e3b331b2078a855b4e0"
+        },
+        {
+          "path": "tests/test_channel_stability_audit.py",
+          "bytes": 631,
+          "sha256": "e954c110e168151495cc496b50cf09131b270ab7df12751d38b8dd487b0abf54"
+        },
+        {
+          "path": "tests/test_continual_learning.py",
+          "bytes": 2868,
+          "sha256": "1303be5efaa93c3e32c8e7acf3e55562f7fb80a39f6fde3321da12b662b74944"
+        },
+        {
+          "path": "tests/test_controlled_experiments.py",
+          "bytes": 1246,
+          "sha256": "14abff191bcb12dbdd6ddf90ee94d896205aa31f933c76509c9877c31d157d87"
+        },
+        {
+          "path": "tests/test_distribution_metrics.py",
+          "bytes": 951,
+          "sha256": "62b24fb139f4f1bf5fd389ae6f9fa455bd71cae4b18853fc78e9f0b38684e5a2"
+        },
+        {
+          "path": "tests/test_esa_controlled_scenarios.py",
+          "bytes": 1176,
+          "sha256": "1708db7893175c12793edae0e9520a0ac5be99a4f329281ab8b6aabc24c7317e"
+        },
+        {
+          "path": "tests/test_ser_update.py",
+          "bytes": 1381,
+          "sha256": "7370a4e3e6034bf1b89018293517a71f69ac0e2dab1f46e9fcc8a292d7880519"
+        },
+        {
+          "path": "tests/test_step3_decision_layer.py",
+          "bytes": 2654,
+          "sha256": "98b151174c07802f9a7d2294f8e03e9caa6c8d4e4c269551b71ea9d5b20770f7"
+        },
+        {
+          "path": "tests/test_streaming_decision.py",
+          "bytes": 3876,
+          "sha256": "b2b527e8358fc92b9bfeadb1f08213f7859447cfa2d9b0d224def7ef6811dd0a"
+        },
+        {
+          "path": "tests/test_validation_calibration.py",
+          "bytes": 1721,
+          "sha256": "98d898d0d78b8ae89d26725840e7b6b7c1c5129173968be4b0f3556f2b00bfee"
+        },
+        {
+          "path": "tests/test_window_eligibility.py",
+          "bytes": 1280,
+          "sha256": "b102db754ab91855d848e8e0ab16ed401b639373296908427d680d0ea297504d"
+        }
+      ]
+    }
+  ],
+  "top_level_archives": [
+    {
+      "path": "C:\\IT\\RM\\Drift_Aware_Adaptive_Anomaly_Detection_ESA_Step7_Updated (2).zip",
+      "bytes": 36021818,
+      "sha256": "369d0cd6b7527950a529d2066c6ae26346c0d0b7511cf4f9e2d1317e54586cf1"
+    },
+    {
+      "path": "C:\\IT\\RM\\Person1_ESA_ADB_Implementation.zip",
+      "bytes": 145065,
+      "sha256": "8ae6e66d882c125c49514aca3ac610fb804d4fb64464ee999036c6a97a50eadc"
+    },
+    {
+      "path": "C:\\IT\\RM\\Person1_ESA_ADB_Implementation_v2.zip",
+      "bytes": 189456,
+      "sha256": "870868270c2b80c26e39a47b87f60042dec60ed391258e664649532015581e9e"
+    },
+    {
+      "path": "C:\\IT\\RM\\Person1_Handover.zip",
+      "bytes": 23947145,
+      "sha256": "0cd1325d7412fbda22c863b3bb4f408d26a4eff452770abf982c7b34ab4b4684"
+    },
+    {
+      "path": "C:\\IT\\RM\\Person1_Processed_Data.zip",
+      "bytes": 22595474,
+      "sha256": "7a7804db75b5b5d4905d43122c891a03c40164b14d715554a8c646ead21bc14b"
+    },
+    {
+      "path": "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3.zip",
+      "bytes": 36522237,
+      "sha256": "5ca18ad86fb2c965892b337ae7786feff225464921a2f27fa3782ca0abc626a4"
+    },
+    {
+      "path": "C:\\IT\\RM\\spacecraft_person1_current.zip",
+      "bytes": 138141,
+      "sha256": "0436d378d94c8351cc7865854f9ffbf6d503908de5dd4db60413eecc42c1f449"
+    },
+    {
+      "path": "C:\\IT\\RM\\spacecraft_telemetry_before_ESA_upgrade.zip",
+      "bytes": 138141,
+      "sha256": "0436d378d94c8351cc7865854f9ffbf6d503908de5dd4db60413eecc42c1f449"
+    }
+  ],
+  "missing_expected_raw_files": [
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels.csv",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\labels.csv",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_41.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_42.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_43.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_44.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_45.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_46.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels.csv",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\labels.csv",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_18.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_19.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_20.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_21.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_22.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_23.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_24.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_25.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_26.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_27.zip",
+    "C:\\IT\\RM\\Satellite-Telemetry-Anomaly-Detection\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_28.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels.csv",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\labels.csv",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_41.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_42.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_43.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_44.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_45.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission1\\channels\\channel_46.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels.csv",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\labels.csv",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_18.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_19.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_20.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_21.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_22.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_23.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_24.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_25.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_26.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_27.zip",
+    "C:\\IT\\RM\\Person2_Drift_Decision_Completion_Pack_v3\\Person1_Handover\\data\\raw\\ESA-Mission2\\channels\\channel_28.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels.csv",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\labels.csv",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_41.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_42.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_43.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_44.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_45.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission1\\channels\\channel_46.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels.csv",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\labels.csv",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_18.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_19.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_20.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_21.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_22.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_23.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_24.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_25.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_26.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_27.zip",
+    "D:\\IT\\RM\\spacecraft_telemetry\\data\\raw\\ESA-Mission2\\channels\\channel_28.zip"
+  ]
+}

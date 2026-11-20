@@ -3,6 +3,8 @@ import json
 import os
 import random
 import time
+from datetime import datetime, timezone
+from uuid import uuid4
 
 import numpy as np
 import pandas as pd
@@ -12,6 +14,38 @@ from torch.utils.data import DataLoader
 from src.utils.config import load_config, resolve_path
 from src.models.lstm_forecaster import LSTMForecaster
 from src.models.window_dataset import ForecastWindowDataset
+
+
+def create_run_directory(model_root, mission, run_id):
+    run_dir = model_root / mission.lower() / "runs" / run_id
+    run_dir.mkdir(parents=True, exist_ok=False)
+    return run_dir
+
+
+def save_checkpoint_safely(checkpoint, destination, overwrite=False):
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if not overwrite:
+        created = False
+        try:
+            with destination.open("xb") as output_file:
+                created = True
+                torch.save(checkpoint, output_file)
+        except Exception:
+            if created and destination.exists():
+                destination.unlink()
+            raise
+        return
+
+    temporary_path = destination.with_name(
+        f".{destination.name}.{uuid4().hex}.tmp"
+    )
+    try:
+        with temporary_path.open("xb") as output_file:
+            torch.save(checkpoint, output_file)
+        os.replace(temporary_path, destination)
+    finally:
+        if temporary_path.exists():
+            temporary_path.unlink()
 
 
 def run_epoch(model, loader, criterion, device, optimizer=None,
@@ -65,6 +99,11 @@ def run_epoch(model, loader, criterion, device, optimizer=None,
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--smoke-test", action="store_true")
+    parser.add_argument(
+        "--overwrite-checkpoint",
+        action="store_true",
+        help="Explicitly replace the legacy lstm_b1.pt checkpoint.",
+    )
     args = parser.parse_args()
 
     cfg = load_config()
@@ -95,10 +134,17 @@ def main():
 
     epochs = 1 if args.smoke_test else int(m["epochs"])
     max_batches = 10 if args.smoke_test else None
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
 
     if args.smoke_test:
         print("\nSMOKE TEST: maximum 10 train and validation batches per mission.")
         print("No model checkpoints will be overwritten.\n", flush=True)
+    elif args.overwrite_checkpoint:
+        print(
+            "\nWARNING: --overwrite-checkpoint explicitly replaces the legacy "
+            "checkpoint for each configured mission.\n",
+            flush=True,
+        )
 
     for mission in missions:
         print(f"\n{'=' * 55}\nStarting {mission}\n{'=' * 55}", flush=True)
@@ -169,15 +215,19 @@ def main():
         best_val = float("inf")
         best_epoch = 0
         stale = 0
+        best_checkpoint = None
         patience = int(m.get("early_stopping_patience", 5))
 
         if args.smoke_test:
-            model_dir = None
+            run_dir = None
         else:
-            model_dir = (
-                resolve_path(cfg["output"]["model_dir"]) / mission.lower()
+            model_root = resolve_path(cfg["output"]["model_dir"])
+            mission_model_dir = model_root / mission.lower()
+            run_dir = create_run_directory(
+                model_root,
+                mission,
+                run_id,
             )
-            model_dir.mkdir(parents=True, exist_ok=True)
 
         for epoch in range(1, epochs + 1):
             print(f"\n{mission} | Epoch {epoch}/{epochs}", flush=True)
@@ -221,18 +271,20 @@ def main():
                 best_epoch = epoch
                 stale = 0
 
-                torch.save({
-                    "model_state_dict": model.state_dict(),
-                    "input_size": values.shape[1],
-                    "config": m,
-                    "best_validation_mse": best_val,
-                    "best_epoch": best_epoch,
-                    "channel_names": channel_names,
-                    "mission": mission,
-                    "seed": seed
-                }, model_dir / "lstm_b1.pt")
-
-                print("  Best checkpoint saved.", flush=True)
+                if not args.smoke_test:
+                    best_checkpoint = {
+                        "model_state_dict": {
+                            name: tensor.detach().cpu().clone()
+                            for name, tensor in model.state_dict().items()
+                        },
+                        "input_size": values.shape[1],
+                        "config": m,
+                        "best_validation_mse": best_val,
+                        "best_epoch": best_epoch,
+                        "channel_names": channel_names,
+                        "mission": mission,
+                        "seed": seed
+                    }
             else:
                 stale += 1
                 if stale >= patience:
@@ -244,8 +296,23 @@ def main():
                     break
 
         if not args.smoke_test:
+            if best_checkpoint is None:
+                raise RuntimeError(
+                    f"{mission}: training completed without a best checkpoint."
+                )
+
+            checkpoint_path = (
+                mission_model_dir / "lstm_b1.pt"
+                if args.overwrite_checkpoint
+                else run_dir / "lstm_b1.pt"
+            )
+            save_checkpoint_safely(
+                best_checkpoint,
+                checkpoint_path,
+                overwrite=args.overwrite_checkpoint,
+            )
             pd.DataFrame(history).to_csv(
-                model_dir / "training_history.csv", index=False
+                run_dir / "training_history.csv", index=False
             )
 
             metadata = json.loads(
@@ -254,7 +321,7 @@ def main():
                 )
             )
 
-            (model_dir / "scaler.json").write_text(
+            (run_dir / "scaler.json").write_text(
                 json.dumps({
                     "mean": metadata["scaler_mean"],
                     "std": metadata["scaler_std"],
@@ -265,7 +332,7 @@ def main():
 
             print(
                 f"\n{mission}: best validation MSE={best_val:.6f}, "
-                f"best epoch={best_epoch}",
+                f"best epoch={best_epoch}; checkpoint={checkpoint_path}",
                 flush=True
             )
 

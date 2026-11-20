@@ -14,11 +14,16 @@ Sampling interval is 30 s nominal (observation index based).
 
 1. Keep the official extracted folders under `data/raw/ESA-Mission1`.
 2. Review `config/config.yaml`.
-3. Mission 1 uses 112 days (16-week block starting 2011-01-15T00:00:00Z) with 322,560 samples.
-5. **Confirm the professor-approved pre/post anomaly masking margins.** The
-   supplied project notes say a surrounding margin is required but do not state
-   its duration. Current config defaults to zero seconds as a placeholder.
-   Do not present this as final until confirmed.
+3. The supplied processed blocks contain 338,689 Mission 1 observations and
+   645,191 Mission 2 observations. These counts come from the packaged NPZ
+   files; raw ESA source verification is still pending. A requested 112-day
+   span does not imply a fixed row count because the source timestamps are
+   irregular.
+4. **Confirm the guide/team-approved pre/post anomaly masking margins.**
+   Preprocessing currently uses zero seconds as a provisional placeholder;
+   drift masking separately uses 60 seconds. Neither value is approved.
+   Do not regenerate or reinterpret existing splits until the decision is
+   recorded.
 
 ## Run
 
@@ -48,6 +53,11 @@ For each mission, under `results/models/<mission-lowercase>/`:
 - `scaler.json`
 - `training_history.csv`
 
+Existing checkpoints at this location are retained for evaluation. New
+training runs write to `results/models/<mission-lowercase>/runs/<UTC-run-id>/`.
+Replacing the legacy checkpoint requires the explicit
+`--overwrite-checkpoint` option.
+
 For each mission, under `results/<mission-lowercase>/`:
 - `b1_metrics.json`
 - `b1_scores.csv`
@@ -70,8 +80,11 @@ Plots are under `results/plots/<mission-lowercase>/`.
 - `window_stride: 10` is a compute-saving initial setting. Report it and keep it
   consistent across experiments. Set to 1 only if compute permits and the team
   wants dense overlapping windows.
-- Mission 1 `id_145` crosses the validation/test boundary in Block 33; it is
-  retained in exact labels and metadata but excluded from validation/test metrics.
+- The existing note that Mission 1 `id_145` crosses the validation/test
+  boundary in Block 33 conflicts with the supplied NPZ metadata, which lists no
+  crossing IDs and has an all-zero `evaluation_ignore_mask`. Raw labels are
+  unavailable, so verify this discrepancy from the authoritative source before
+  claiming either result.
 - Unlabelled timestamps are treated as normal under the current interval-label
   interpretation. Confirm that this matches the dataset annotation semantics.
 
@@ -122,7 +135,9 @@ python -m unittest discover -s tests -v
 ```
 
 The P1 commands do not validate or reproduce the B1 checkpoint unless the
-local processed data and checkpoint are present.
+local processed data and checkpoint are present. To reproduce the baseline,
+first verify the raw-source/processed-data manifest and checkpoint hashes,
+then run only `python -m src.models.evaluate_b1`; training is not required.
 
 ### Label and test protocol
 
@@ -135,10 +150,11 @@ Ground-truth labels must never be passed into operational masking, drift
 detection or candidate-update decisions. The final test split is for offline
 evaluation only.
 
-Point/window F0.5 and event-wise F0.5 are separate metrics. A two-window event
-tolerance currently appears in the existing implementation and is configured as
-provisional in `config/config.yaml`. It must not be reported as approved until
-the team confirms it.
+Point/window F0.5 and event-wise F0.5 are separate metrics. The dedicated
+`python -m src.evaluation.esa_event_evaluation` pipeline writes one JSON report
+per mission. Its current two-window tolerance and one-to-one matching rule are
+provisional; final event metrics remain pending raw-source verification and
+guide/team approval.
 
 ### Complete-window eligibility
 
