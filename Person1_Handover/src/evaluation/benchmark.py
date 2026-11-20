@@ -578,6 +578,10 @@ def run_adaptive_simulation(
     validation_seconds = 0.0
     detection_seconds = 0.0
     decision_seconds = 0.0
+    last_candidate_attempt_step = None
+    candidate_cooldown_windows = max(
+        1, int(drift_cfg["recent_window_size"])
+    )
     trace = {
         "raw_mse": cached_scores.copy(),
         "predicted_anomaly": np.zeros(len(cached_scores), dtype=np.uint8),
@@ -821,6 +825,14 @@ def run_adaptive_simulation(
 
         if request_action is None or len(recent_entries) < minimum_candidate_windows:
             continue
+        if (
+            baseline_name == "B4"
+            and last_candidate_attempt_step is not None
+            and step - last_candidate_attempt_step < candidate_cooldown_windows
+        ):
+            continue
+        if baseline_name == "B4":
+            last_candidate_attempt_step = step
         request_count += 1
         trace["action"][step] = request_action
         if (
