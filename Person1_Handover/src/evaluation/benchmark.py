@@ -729,7 +729,10 @@ def run_adaptive_simulation(
                 request_action = "FINE_TUNE"
         elif baseline_name == "B4":
             started = time.perf_counter()
-            persistence_record = persistence.update(drift_flag, step=step)
+            decision_drift_evidence = bool(drift_flag or sustained_elevation)
+            persistence_record = persistence.update(
+                decision_drift_evidence, step=step
+            )
             distribution_reference = reference_residuals
             distribution_recent = recent_residuals
             if drift_flag and b4_confirmation is not None:
@@ -751,7 +754,7 @@ def run_adaptive_simulation(
                 severity = 0.0
 
             if not use_severity:
-                severity = 1.0 if drift_flag else 0.0
+                severity = 1.0 if decision_drift_evidence else 0.0
                 normalized = {"ks": severity, "wasserstein": severity, "js": severity}
             trace["severity"][step] = severity
 
@@ -761,18 +764,21 @@ def run_adaptive_simulation(
             persistence_passed = (
                 persistence_record["is_persistent"]
                 if use_persistence
-                else bool(drift_flag)
+                else decision_drift_evidence
             )
             degradation_passed = (
                 degradation_record["is_significant_degradation"]
                 if use_degradation
-                else bool(drift_flag)
+                else decision_drift_evidence
             )
             decision = engine.decide(
                 step=step,
                 timestamp_utc=str(step),
-                drift_detected=drift_flag,
-                detector_name="ADWIN",
+                drift_detected=decision_drift_evidence,
+                detector_name=(
+                    "ADWIN+SUSTAINED_RESIDUAL"
+                    if sustained_elevation else "ADWIN"
+                ),
                 raw_measures=measures,
                 normalized_measures=normalized,
                 severity=severity,
@@ -789,7 +795,7 @@ def run_adaptive_simulation(
                 ),
                 degradation_passed=degradation_passed,
                 raw_adwin_alarm=bool(trace["raw_adwin_alarm"][step]),
-                drift_confirmed=drift_flag,
+                drift_confirmed=decision_drift_evidence,
                 suppression_reason=str(trace["suppression_reason"][step]),
                 anomaly_mask_fraction=float(
                     trace["mask_dominance_fraction"][step]
