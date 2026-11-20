@@ -85,6 +85,29 @@ def score_model_on_windows(
     return scores, time.perf_counter() - start_time
 
 
+def _calibrate_anomaly_threshold(
+    scores: np.ndarray,
+    eligible: np.ndarray,
+    alpha: float,
+    quantile: float,
+) -> float:
+    scores = np.asarray(scores, dtype=np.float32)
+    eligible = np.asarray(eligible, dtype=bool)
+    if scores.ndim != 1 or eligible.ndim != 1 or len(scores) != len(eligible):
+        raise ValueError("Threshold scores and eligibility mask must be aligned 1-D arrays.")
+    if not np.isfinite(alpha) or not 0.0 < float(alpha) <= 1.0:
+        raise ValueError("EMA alpha must be finite and in (0, 1].")
+    if not np.isfinite(quantile) or not 0.0 < float(quantile) < 1.0:
+        raise ValueError("Threshold quantile must be finite and in (0, 1).")
+
+    eligible = eligible & np.isfinite(scores)
+    ema_scores = ema_reset_on_excluded(scores, eligible, float(alpha))
+    clean_ema_scores = ema_scores[np.isfinite(ema_scores)]
+    if not len(clean_ema_scores):
+        raise ValueError("No eligible finite scores are available for threshold calibration.")
+    return float(np.quantile(clean_ema_scores, float(quantile)))
+
+
 def _longest_clean_interval(
     exclusion_mask: np.ndarray,
     start: int,
@@ -192,6 +215,8 @@ def prepare_scenario_data(
     threshold = float(
         np.quantile(normal_ema_scores, float(anomaly_cfg["threshold_quantile"]))
     )
+    gate_all_x = gate_x
+    gate_all_y = gate_y
     gate_x = gate_x[valid_gate_windows]
     gate_y = gate_y[valid_gate_windows]
 
@@ -387,6 +412,9 @@ def prepare_scenario_data(
         "threshold": threshold,
         "normal_validation_ema_scores": normal_ema_scores,
         "normal_validation_raw_scores": normal_raw_scores,
+        "gate_all_x": gate_all_x,
+        "gate_all_y": gate_all_y,
+        "gate_valid_mask": valid_gate_windows,
         "gate_x": gate_x,
         "gate_y": gate_y,
         "adaptation_validation_x": adaptation_validation_x,
@@ -413,6 +441,7 @@ def _evaluate_frozen_model(
     scenario_data: Dict[str, Any],
     cfg: Dict[str, Any],
     device: torch.device,
+    threshold: Optional[float] = None,
 ) -> Tuple[Dict[str, Any], np.ndarray, float]:
     scores, inference_seconds = score_model_on_windows(
         model,
@@ -426,7 +455,10 @@ def _evaluate_frozen_model(
         np.ones(len(scores), dtype=bool),
         float(cfg["anomaly"]["ema_alpha"]),
     )
-    predictions = (ema > scenario_data["threshold"]) & np.isfinite(ema)
+    evaluation_threshold = (
+        float(scenario_data["threshold"]) if threshold is None else float(threshold)
+    )
+    predictions = (ema > evaluation_threshold) & np.isfinite(ema)
     metrics = compute_event_metrics(
         scenario_data["evaluation_true"],
         predictions,
@@ -472,6 +504,7 @@ def run_adaptive_simulation(
         experiment_cfg.get("minimum_distribution_samples", 20)
     )
     current_model = copy.deepcopy(base_model).to(device)
+    current_threshold = float(scenario_data["threshold"])
     validation_gate = ValidationGate(
         scenario_data["gate_x"],
         scenario_data["gate_y"],
@@ -876,6 +909,20 @@ def run_adaptive_simulation(
             continue
 
         current_model = candidate_model
+        threshold_scores, inference_seconds = score_model_on_windows(
+            current_model,
+            scenario_data["gate_all_x"],
+            scenario_data["gate_all_y"],
+            device,
+            int(model_cfg["batch_size"]),
+        )
+        current_threshold = _calibrate_anomaly_threshold(
+            threshold_scores,
+            scenario_data["gate_valid_mask"],
+            float(anomaly_cfg["ema_alpha"]),
+            float(anomaly_cfg["threshold_quantile"]),
+        )
+        adaptation_inference_seconds += inference_seconds
         update_counts[request_action] += 1
         for entry in recent_entries:
             replay.add(entry["x"], entry["y"], is_anomaly_masked=False)
@@ -894,7 +941,7 @@ def run_adaptive_simulation(
 
     evaluation_started = time.perf_counter()
     event_metrics, test_predictions, evaluation_inference_seconds = _evaluate_frozen_model(
-        current_model, scenario_data, cfg, device
+        current_model, scenario_data, cfg, device, threshold=current_threshold
     )
     evaluation_seconds = time.perf_counter() - evaluation_started
     gate_summary = validation_gate.get_summary()

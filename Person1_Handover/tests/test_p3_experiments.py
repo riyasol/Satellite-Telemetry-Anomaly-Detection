@@ -8,6 +8,8 @@ import torch
 
 from src.evaluation.benchmark import (
     SustainedElevationTracker,
+    _calibrate_anomaly_threshold,
+    _evaluate_frozen_model,
     prepare_scenario_data,
     run_adaptive_simulation,
 )
@@ -76,6 +78,51 @@ class ScenarioTests(unittest.TestCase):
 
 
 class BenchmarkProtocolTests(unittest.TestCase):
+    def test_candidate_threshold_calibration_resets_ema_at_excluded_windows(self):
+        threshold = _calibrate_anomaly_threshold(
+            np.array([1.0, 100.0, 3.0], dtype=np.float32),
+            np.array([True, False, True]),
+            alpha=0.5,
+            quantile=0.5,
+        )
+
+        self.assertEqual(threshold, 2.0)
+
+    def test_frozen_model_evaluation_accepts_model_specific_threshold(self):
+        model = LSTMForecaster(
+            input_size=1,
+            hidden_size=2,
+            num_layers=1,
+            dropout=0.0,
+            horizon=1,
+        )
+        scenario_data = {
+            "evaluation_x": np.zeros((2, 2, 1), dtype=np.float32),
+            "evaluation_y": np.zeros((2, 1, 1), dtype=np.float32),
+            "evaluation_true": np.array([False, True]),
+            "evaluation_valid": np.array([True, True]),
+            "threshold": 10.0,
+        }
+        cfg = {
+            "model": {"batch_size": 2},
+            "anomaly": {"ema_alpha": 1.0},
+            "evaluation": {"event_tolerance_steps": 0},
+        }
+
+        with patch(
+            "src.evaluation.benchmark.score_model_on_windows",
+            return_value=(np.array([1.0, 3.0], dtype=np.float32), 0.0),
+        ):
+            _, predictions, _ = _evaluate_frozen_model(
+                model,
+                scenario_data,
+                cfg,
+                torch.device("cpu"),
+                threshold=2.0,
+            )
+
+        np.testing.assert_array_equal(predictions, [False, True])
+
     def test_b4_candidate_attempts_respect_recent_window_cooldown(self):
         windows_x = np.zeros((10, 2, 1), dtype=np.float32)
         windows_y = np.zeros((10, 1, 1), dtype=np.float32)
