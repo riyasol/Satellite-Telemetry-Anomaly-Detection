@@ -85,6 +85,30 @@ def score_model_on_windows(
     return scores, time.perf_counter() - start_time
 
 
+def _count_injected_anomaly_window_overlaps(
+    scenario_data: Dict[str, Any],
+    window_steps: list[int],
+    input_window: int,
+    forecast_horizon: int,
+) -> Optional[int]:
+    """Audit pulse overlap after adaptation without using labels in online decisions."""
+    anomaly_points = scenario_data.get("adaptation_anomaly_points")
+    starts = scenario_data.get("adaptation_starts")
+    if anomaly_points is None or starts is None:
+        return None
+    if not window_steps:
+        return 0
+    selected_starts = np.asarray(starts, dtype=np.int64)[window_steps]
+    contaminated = window_has_anomaly(
+        np.asarray(anomaly_points, dtype=bool),
+        selected_starts,
+        input_window,
+        forecast_horizon,
+        include_input=True,
+    )
+    return int(np.count_nonzero(contaminated))
+
+
 def _calibrate_anomaly_threshold(
     scores: np.ndarray,
     eligible: np.ndarray,
@@ -599,6 +623,8 @@ def run_adaptive_simulation(
     blocked_until = -1
     update_counts = {"FINE_TUNE": 0, "STRONG_UPDATE": 0}
     request_count = 0
+    candidate_training_window_steps = []
+    accepted_replay_window_steps = []
     drift_alarm_steps = []
     confirmed_drift_steps = []
     mask_suppression_count = 0
@@ -617,15 +643,30 @@ def run_adaptive_simulation(
     )
     trace = {
         "raw_mse": cached_scores.copy(),
+        "ema_score": np.full(len(cached_scores), np.nan, dtype=np.float32),
+        "threshold": np.full(
+            len(cached_scores), current_threshold, dtype=np.float32
+        ),
         "predicted_anomaly": np.zeros(len(cached_scores), dtype=np.uint8),
         "sustained_elevation": np.zeros(len(cached_scores), dtype=np.uint8),
         "masked": np.zeros(len(cached_scores), dtype=np.uint8),
         "raw_adwin_alarm": np.zeros(len(cached_scores), dtype=np.uint8),
         "drift_alarm": np.zeros(len(cached_scores), dtype=np.uint8),
+        "adwin_cut_stream_index": np.full(
+            len(cached_scores), -1, dtype=np.int64
+        ),
         "mask_dominance_fraction": np.zeros(len(cached_scores), dtype=np.float32),
         "suppression_reason": np.full(len(cached_scores), "none", dtype=object),
         "severity": np.zeros(len(cached_scores), dtype=np.float32),
+        "ks": np.zeros(len(cached_scores), dtype=np.float32),
+        "wasserstein": np.zeros(len(cached_scores), dtype=np.float32),
+        "js": np.zeros(len(cached_scores), dtype=np.float32),
+        "persistence_count": np.zeros(len(cached_scores), dtype=np.int32),
+        "persistence_passed": np.zeros(len(cached_scores), dtype=np.uint8),
+        "relative_degradation": np.zeros(len(cached_scores), dtype=np.float32),
+        "degradation_passed": np.zeros(len(cached_scores), dtype=np.uint8),
         "action": np.full(len(cached_scores), "NO_UPDATE", dtype=object),
+        "accepted_update": np.zeros(len(cached_scores), dtype=np.uint8),
     }
     drift_start_window = scenario_data["adaptation_drift_start_window"]
 
@@ -660,6 +701,11 @@ def run_adaptive_simulation(
             confirmation["anomaly_mask_fraction"]
         )
         trace["suppression_reason"][step] = confirmation["suppression_reason"]
+        cut_point = int(confirmation["cut_point"])
+        if 0 <= cut_point < len(detector.last_cut_window_idx):
+            trace["adwin_cut_stream_index"][step] = int(
+                detector.last_cut_window_idx[cut_point]
+            )
         if confirmation["drift_confirmed"]:
             confirmed_drift_steps.append(step)
         elif confirmation["suppression_reason"] == "anomaly_mask_dominance":
@@ -676,8 +722,9 @@ def run_adaptive_simulation(
             if adaptation_ema_state is None
             else alpha * score + (1.0 - alpha) * adaptation_ema_state
         )
+        trace["threshold"][step] = current_threshold
         sustained_elevation = elevation_tracker.update(
-            adaptation_ema_state, scenario_data["threshold"]
+            adaptation_ema_state, current_threshold
         )
         trace["sustained_elevation"][step] = int(sustained_elevation)
 
@@ -694,7 +741,8 @@ def run_adaptive_simulation(
             masked_window_indices.discard(step)
 
         ema_state = score if ema_state is None else alpha * score + (1.0 - alpha) * ema_state
-        is_predicted_anomaly = bool(ema_state > scenario_data["threshold"])
+        trace["ema_score"][step] = ema_state
+        is_predicted_anomaly = bool(ema_state > current_threshold)
         trace["predicted_anomaly"][step] = int(is_predicted_anomaly)
 
         if use_masking and is_predicted_anomaly and not sustained_elevation:
@@ -790,6 +838,9 @@ def run_adaptive_simulation(
                 normalized = {"ks": 0.0, "wasserstein": 0.0, "js": 0.0}
                 severity = 0.0
 
+            trace["ks"][step] = float(measures["ks"])
+            trace["wasserstein"][step] = float(measures["wasserstein"])
+            trace["js"][step] = float(measures["js"])
             if not use_severity:
                 severity = 1.0 if decision_drift_evidence else 0.0
                 normalized = {"ks": severity, "wasserstein": severity, "js": severity}
@@ -798,11 +849,21 @@ def run_adaptive_simulation(
             degradation_record = degradation.evaluate_residual_degradation(
                 np.asarray(recent_residuals), step=step
             )
+            trace["relative_degradation"][step] = float(
+                degradation_record["relative_degradation"]
+            )
+            trace["degradation_passed"][step] = int(
+                degradation_record["is_significant_degradation"]
+            )
+            trace["persistence_count"][step] = int(
+                persistence_record["persistence_count"]
+            )
             persistence_passed = (
                 persistence_record["is_persistent"]
                 if use_persistence
                 else decision_drift_evidence
             )
+            trace["persistence_passed"][step] = int(persistence_passed)
             degradation_passed = (
                 degradation_record["is_significant_degradation"]
                 if use_degradation
@@ -877,6 +938,9 @@ def run_adaptive_simulation(
 
         candidate_x = np.stack([entry["x"] for entry in recent_entries])
         candidate_y = np.stack([entry["y"] for entry in recent_entries])
+        candidate_training_window_steps.extend(
+            int(entry["step"]) for entry in recent_entries
+        )
         is_strong = request_action == "STRONG_UPDATE"
         training_started = time.perf_counter()
         candidate_model, candidate_metadata, _ = trainer.create_candidate(
@@ -897,6 +961,7 @@ def run_adaptive_simulation(
                 if is_strong else continual_cfg["replay_ratio"]
             ),
             batch_size=int(model_cfg["batch_size"]),
+            window_stride=int(model_cfg.get("window_stride", 1)),
         )
         training_seconds += time.perf_counter() - training_started
 
@@ -924,7 +989,9 @@ def run_adaptive_simulation(
         )
         adaptation_inference_seconds += inference_seconds
         update_counts[request_action] += 1
+        trace["accepted_update"][step] = 1
         for entry in recent_entries:
+            accepted_replay_window_steps.append(int(entry["step"]))
             replay.add(entry["x"], entry["y"], is_anomaly_masked=False)
         reference_residuals = list(recent_residuals)
         if step + 1 < len(adaptation_x):
@@ -946,6 +1013,18 @@ def run_adaptive_simulation(
     evaluation_seconds = time.perf_counter() - evaluation_started
     gate_summary = validation_gate.get_summary()
     total_updates = sum(update_counts.values())
+    candidate_training_pulse_overlaps = _count_injected_anomaly_window_overlaps(
+        scenario_data,
+        candidate_training_window_steps,
+        int(model_cfg["input_window"]),
+        int(model_cfg["forecast_horizon"]),
+    )
+    accepted_replay_pulse_overlaps = _count_injected_anomaly_window_overlaps(
+        scenario_data,
+        accepted_replay_window_steps,
+        int(model_cfg["input_window"]),
+        int(model_cfg["forecast_horizon"]),
+    )
     harmless_scenario = scenario_id in {1, 2, 4}
     delay_windows = (
         first_decision_step - drift_start_window
@@ -967,6 +1046,14 @@ def run_adaptive_simulation(
         "updates_during_large_harmless_period": total_updates if scenario_id == 4 else 0,
         "candidates_accepted": int(gate_summary["accepted_count"]),
         "candidates_rejected": int(gate_summary["rejected_count"]),
+        "candidate_training_window_exposures": len(
+            candidate_training_window_steps
+        ),
+        "candidate_training_pulse_contaminated_exposures":
+            candidate_training_pulse_overlaps,
+        "accepted_replay_sample_additions": len(accepted_replay_window_steps),
+        "accepted_replay_pulse_contaminated_additions":
+            accepted_replay_pulse_overlaps,
         "candidate_retention_rejections": int(
             gate_summary["rejection_counts"]["retention"]
         ),

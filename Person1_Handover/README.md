@@ -198,3 +198,23 @@ The event-tolerance setting and anomaly-mask thresholds are provisional. Treat
 the generated metrics as measured results, not proof of superiority over a
 paper: make that claim only after the scenarios demonstrate valid, reproducible
 improvement against the cited paper's protocol and baselines.
+
+## Interactive results dashboard
+
+After generating the comparison, ablation, and B4 trace outputs, run from
+`Person1_Handover`:
+
+```powershell
+streamlit run dashboard/app.py
+```
+
+The dashboard reads the processed Mission 1 split and saved CSV outputs. To
+generate or refresh the B1/B4 adaptation trace, run:
+
+```powershell
+python -m src.experiments.plot_drift_timeline
+```
+
+The trace CSV is an adaptation-stream diagnostic, not final-test data.
+Injected-pulse overlap fields in ablation outputs are computed offline for
+safety auditing and are never inputs to online adaptation decisions.

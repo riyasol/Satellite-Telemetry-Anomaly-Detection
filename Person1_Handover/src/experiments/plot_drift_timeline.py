@@ -13,12 +13,14 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
 
 from src.continual.replay_buffer import ReplayBuffer
 from src.evaluation.benchmark import (
     prepare_scenario_data,
     run_adaptive_simulation,
+    score_model_on_windows,
 )
 from src.models.anomaly_scoring import load_forecaster
 from src.utils.config import load_config, resolve_path
@@ -80,8 +82,83 @@ def main() -> None:
     trace = result["trace"]
     steps = np.arange(len(trace["raw_mse"]))
     drift_start = scenario_data["adaptation_drift_start_window"]
+    baseline_residuals, _ = score_model_on_windows(
+        model,
+        scenario_data["adaptation_x"],
+        scenario_data["adaptation_y"],
+        device,
+        int(cfg["model"]["batch_size"]),
+    )
     output_dir = resolve_path(cfg["output"]["plot_dir"]) / "mission1"
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    trace_frame = pd.DataFrame({
+        "window_step": steps,
+        "b1_raw_mse": baseline_residuals,
+        "b4_raw_mse": trace["raw_mse"],
+        "b4_ema_score": trace["ema_score"],
+        "b1_threshold": scenario_data["threshold"],
+        "b4_threshold": trace["threshold"],
+        "drift_start": drift_start,
+        "anomaly_pulses_injected": (
+            scenario_data["adaptation_anomaly_points"].sum() > 0
+        ),
+        "predicted_anomaly": trace["predicted_anomaly"],
+        "sustained_elevation": trace["sustained_elevation"],
+        "masked": trace["masked"],
+        "raw_adwin_alarm": trace["raw_adwin_alarm"],
+        "confirmed_drift_alarm": trace["drift_alarm"],
+        "adwin_cut_stream_index": trace["adwin_cut_stream_index"],
+        "mask_dominance_fraction": trace["mask_dominance_fraction"],
+        "suppression_reason": trace["suppression_reason"],
+        "ks": trace["ks"],
+        "wasserstein": trace["wasserstein"],
+        "js": trace["js"],
+        "severity": trace["severity"],
+        "persistence_count": trace["persistence_count"],
+        "persistence_passed": trace["persistence_passed"],
+        "relative_degradation": trace["relative_degradation"],
+        "degradation_passed": trace["degradation_passed"],
+        "action": trace["action"],
+        "accepted_update": trace["accepted_update"],
+    })
+    trace_path = output_dir / "b4_s3_trace.csv"
+    trace_frame.to_csv(trace_path, index=False)
+
+    fig, axis = plt.subplots(figsize=(14, 5))
+    axis.plot(steps, baseline_residuals, color="#555555", lw=1.0, label="B1 residual MSE")
+    axis.plot(steps, trace["raw_mse"], color="#1f77b4", lw=1.0, label="B4 residual MSE")
+    axis.plot(
+        steps,
+        trace["threshold"],
+        color="#2ca02c",
+        linestyle="--",
+        label="B4 validation-calibrated threshold",
+    )
+    if drift_start is not None:
+        axis.axvline(
+            drift_start, color="#d62728", linestyle=":", label="Injected drift start"
+        )
+    accepted_steps = np.flatnonzero(trace["accepted_update"])
+    if len(accepted_steps):
+        axis.scatter(
+            accepted_steps,
+            trace["raw_mse"][accepted_steps],
+            color="#9467bd",
+            marker="x",
+            label="Accepted B4 update",
+            zorder=3,
+        )
+    axis.set_yscale("log")
+    axis.set_xlabel("Adaptation-stream window")
+    axis.set_ylabel("Forecast residual MSE")
+    axis.set_title("B1 vs B4 residuals on the persistent-drift adaptation stream")
+    axis.legend(loc="upper left")
+    axis.grid(True, linestyle="--", alpha=0.5)
+    fig.tight_layout()
+    recovery_path = output_dir / "residual_recovery_b1_vs_b4.png"
+    fig.savefig(recovery_path, dpi=180)
+    plt.close(fig)
 
     fig, axes = plt.subplots(4, 1, figsize=(14, 10), sharex=True)
     telemetry = scenario_data["adaptation_x"][:, 0, 0]
@@ -99,7 +176,14 @@ def main() -> None:
         scenario_data["threshold"],
         color="green",
         linestyle="--",
-        label="Normal calibration threshold",
+        label="Initial normal calibration threshold",
+    )
+    axes[1].plot(
+        steps,
+        trace["threshold"],
+        color="#9467bd",
+        linestyle=":",
+        label="Current B4 threshold",
     )
     predicted = np.flatnonzero(trace["predicted_anomaly"])
     if len(predicted):
@@ -147,6 +231,8 @@ def main() -> None:
     fig.savefig(output_path, dpi=180)
     plt.close(fig)
     print(f"Saved diagnostic timeline: {output_path}")
+    print(f"Saved B1/B4 residual recovery plot: {recovery_path}")
+    print(f"Saved B4 decision trace: {trace_path}")
     print(
         f"Held-out event F0.5={result['event_metrics']['f0.5_event']:.4f}; "
         f"updates={result['updates']}; "

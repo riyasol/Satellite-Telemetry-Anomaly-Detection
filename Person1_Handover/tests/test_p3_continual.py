@@ -252,6 +252,36 @@ class CandidateTrainerTests(unittest.TestCase):
                     np.empty((0, 1, 1), dtype=np.float32),
                 )
 
+    def test_candidate_uses_gap_separated_recent_validation_windows(self):
+        model = LSTMForecaster(
+            input_size=1,
+            hidden_size=4,
+            num_layers=1,
+            dropout=0.0,
+            horizon=1,
+        )
+        recent_x = np.random.default_rng(4).normal(size=(10, 2, 1)).astype(np.float32)
+        recent_y = np.zeros((10, 1, 1), dtype=np.float32)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            trainer = CandidateTrainer(
+                model, torch.device("cpu"), ReplayBuffer(2), Path(tmp)
+            )
+            _, metadata, _ = trainer.create_candidate(
+                model,
+                recent_x,
+                recent_y,
+                epochs=2,
+                replay_ratio=0.0,
+                batch_size=4,
+                window_stride=1,
+            )
+
+        self.assertEqual(metadata["recent_samples_count"], 10)
+        self.assertEqual(metadata["recent_training_samples_count"], 5)
+        self.assertEqual(metadata["recent_validation_samples_count"], 2)
+        self.assertIsNotNone(metadata["best_validation_loss"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -54,6 +54,7 @@ class CandidateTrainer:
         lr: Optional[float] = None,
         replay_ratio: float = 0.3,
         batch_size: int = 64,
+        window_stride: int = 1,
     ) -> Tuple[LSTMForecaster, Dict[str, Any], Path]:
         """Train a candidate model using recent eligible telemetry + SER replay buffer."""
         action_type = action_type.upper()
@@ -67,6 +68,8 @@ class CandidateTrainer:
             raise ValueError("replay_ratio must be in [0, 1).")
         if batch_size <= 0:
             raise ValueError("batch_size must be positive.")
+        if window_stride <= 0:
+            raise ValueError("window_stride must be positive.")
 
         recent_x = np.asarray(recent_x, dtype=np.float32)
         recent_y = np.asarray(recent_y, dtype=np.float32)
@@ -106,8 +109,32 @@ class CandidateTrainer:
         recent_t_y = torch.from_numpy(recent_y)
         n_recent = len(recent_t_x)
 
+        validation_count = max(1, int(n_recent * 0.2))
+        # Leave a gap so overlapping input/target windows cannot cross the split.
+        overlap_gap = int(
+            np.ceil((recent_x.shape[1] + recent_y.shape[1]) / window_stride)
+        )
+        training_recent_count = n_recent - validation_count - overlap_gap
+        recent_validation_x = None
+        recent_validation_y = None
+        if training_recent_count > 0:
+            validation_start = n_recent - validation_count
+            recent_validation_x = recent_t_x[validation_start:]
+            recent_validation_y = recent_t_y[validation_start:]
+            recent_t_x = recent_t_x[:training_recent_count]
+            recent_t_y = recent_t_y[:training_recent_count]
+        else:
+            training_recent_count = n_recent
+
         # Mix with replay buffer (SER)
-        n_replay = int(n_recent * (eff_replay_ratio / (1.0 - eff_replay_ratio))) if eff_replay_ratio < 1.0 else n_recent
+        n_replay = (
+            int(
+                training_recent_count
+                * (eff_replay_ratio / (1.0 - eff_replay_ratio))
+            )
+            if eff_replay_ratio < 1.0
+            else training_recent_count
+        )
         n_replay = min(n_replay, self.replay_buffer.size())
 
         if n_replay > 0:
@@ -125,7 +152,26 @@ class CandidateTrainer:
         criterion = nn.MSELoss()
 
         epoch_losses = []
+        best_validation_loss = None
+        best_epoch = 0
+        best_state = None
+        epochs_without_improvement = 0
+        if recent_validation_x is not None and recent_validation_y is not None:
+            candidate_model.eval()
+            with torch.no_grad():
+                initial_prediction = candidate_model(
+                    recent_validation_x.to(self.device)
+                )
+                best_validation_loss = float(
+                    criterion(
+                        initial_prediction,
+                        recent_validation_y.to(self.device),
+                    ).item()
+                )
+            best_state = copy.deepcopy(candidate_model.state_dict())
+
         for ep in range(num_epochs):
+            candidate_model.train()
             total_loss = 0.0
             count = 0
             for bx, by in loader:
@@ -143,6 +189,33 @@ class CandidateTrainer:
                 count += bs
             epoch_losses.append(total_loss / count if count else 0.0)
 
+            if recent_validation_x is not None and recent_validation_y is not None:
+                candidate_model.eval()
+                validation_total = 0.0
+                validation_samples = 0
+                with torch.no_grad():
+                    for start in range(0, len(recent_validation_x), batch_size):
+                        end = start + batch_size
+                        bx = recent_validation_x[start:end].to(self.device)
+                        by = recent_validation_y[start:end].to(self.device)
+                        loss = criterion(candidate_model(bx), by)
+                        validation_total += loss.item() * len(bx)
+                        validation_samples += len(bx)
+                validation_loss = validation_total / validation_samples
+                if validation_loss < best_validation_loss:
+                    best_validation_loss = float(validation_loss)
+                    best_epoch = ep + 1
+                    best_state = copy.deepcopy(candidate_model.state_dict())
+                    epochs_without_improvement = 0
+                else:
+                    epochs_without_improvement += 1
+                    if epochs_without_improvement >= 2:
+                        break
+
+        if best_state is not None:
+            candidate_model.load_state_dict(best_state)
+        candidate_model.eval()
+
         elapsed = time.perf_counter() - start_time
         save_path = self.checkpoints_dir / f"{candidate_id}.pt"
 
@@ -152,11 +225,20 @@ class CandidateTrainer:
             "epochs": num_epochs,
             "learning_rate": learning_rate,
             "recent_samples_count": int(n_recent),
+            "recent_training_samples_count": int(training_recent_count),
+            "recent_validation_samples_count": int(
+                len(recent_validation_x) if recent_validation_x is not None else 0
+            ),
             "replay_samples_count": int(n_replay),
-            "replay_ratio_actual": float(n_replay / (n_recent + n_replay)) if (n_recent + n_replay) else 0.0,
+            "replay_ratio_actual": (
+                float(n_replay / (training_recent_count + n_replay))
+                if (training_recent_count + n_replay) else 0.0
+            ),
             "training_time_seconds": float(elapsed),
             "final_train_loss": float(epoch_losses[-1]) if epoch_losses else 0.0,
             "epoch_losses": epoch_losses,
+            "best_validation_loss": best_validation_loss,
+            "best_epoch": best_epoch,
         }
 
         # Save candidate checkpoint separately

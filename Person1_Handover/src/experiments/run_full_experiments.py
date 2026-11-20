@@ -60,6 +60,7 @@ def _result_row(
         "f0.5_event": metrics["f0.5_event"],
         "precision": metrics["precision"],
         "recall": metrics["recall"],
+        "false_alarm_rate": metrics["false_alarm_rate"],
         "tp_events": metrics["tp_events"],
         "fp_events": metrics["fp_events"],
         "fn_events": metrics["fn_events"],
@@ -87,6 +88,14 @@ def _result_row(
             result.get("sustained_elevation_windows", 0),
         "candidates_accepted": result.get("candidates_accepted", 0),
         "candidates_rejected": result.get("candidates_rejected", 0),
+        "candidate_training_window_exposures":
+            result.get("candidate_training_window_exposures", 0),
+        "candidate_training_pulse_contaminated_exposures":
+            result.get("candidate_training_pulse_contaminated_exposures"),
+        "accepted_replay_sample_additions":
+            result.get("accepted_replay_sample_additions", 0),
+        "accepted_replay_pulse_contaminated_additions":
+            result.get("accepted_replay_pulse_contaminated_additions"),
         "candidate_retention_rejections":
             result.get("candidate_retention_rejections", 0),
         "candidate_adaptation_validation_rejections":
@@ -112,7 +121,7 @@ def _save_comparison_plots(
     plots_dir: Path,
 ) -> None:
     scenarios = comparison["scenario_name"].drop_duplicates().tolist()
-    x = np.arange(len(scenarios))
+    scenario_positions = np.arange(len(scenarios))
     width = 0.2
     plt.figure(figsize=(11, 5))
     for index, baseline in enumerate(("B1", "B2", "B3", "B4")):
@@ -121,8 +130,13 @@ def _save_comparison_plots(
             rows.loc[rows["scenario_name"] == name, "f0.5_event"].iloc[0]
             for name in scenarios
         ]
-        plt.bar(x + (index - 1.5) * width, scores, width, label=baseline)
-    plt.xticks(x, scenarios, rotation=15, ha="right")
+        plt.bar(
+            scenario_positions + (index - 1.5) * width,
+            scores,
+            width,
+            label=baseline,
+        )
+    plt.xticks(scenario_positions, scenarios, rotation=15, ha="right")
     plt.ylabel("Event-wise F0.5")
     plt.title("B1-B4 event detection across controlled scenarios")
     plt.legend()
@@ -130,6 +144,37 @@ def _save_comparison_plots(
     plt.tight_layout()
     plt.savefig(plots_dir / "b1_b4_f05_comparison.png", dpi=180)
     plt.close()
+
+    figure, axes = plt.subplots(1, 3, figsize=(16, 5))
+    metric_specs = (
+        ("f0.5_event", "Event-wise F0.5", (0.0, 1.05)),
+        ("precision", "Event precision", (0.0, 1.05)),
+        ("false_alarm_rate", "Event false-alarm rate (lower is better)", None),
+    )
+    for axis, (metric, title, limits) in zip(axes, metric_specs):
+        for index, baseline in enumerate(("B1", "B2", "B3", "B4")):
+            rows = comparison[comparison["baseline"] == baseline]
+            scores = [
+                rows.loc[rows["scenario_name"] == name, metric].iloc[0]
+                for name in scenarios
+            ]
+            axis.bar(
+                scenario_positions + (index - 1.5) * width,
+                scores,
+                width,
+                label=baseline,
+            )
+        axis.set_xticks(scenario_positions, scenarios, rotation=20, ha="right")
+        axis.set_title(title)
+        if limits is not None:
+            axis.set_ylim(*limits)
+        axis.grid(axis="y", linestyle="--", alpha=0.5)
+    axes[0].set_ylabel("Score")
+    axes[0].legend()
+    figure.suptitle("B1-B4 held-out event metrics (measured results)")
+    figure.tight_layout()
+    figure.savefig(plots_dir / "f05_precision_far_comparison.png", dpi=180)
+    plt.close(figure)
 
     update_summary = comparison.groupby("baseline")[
         ["total_updates", "unnecessary_updates"]
@@ -152,6 +197,31 @@ def _save_comparison_plots(
     plt.tight_layout()
     plt.savefig(plots_dir / "unnecessary_updates_comparison.png", dpi=180)
     plt.close()
+
+    b1_b4_updates = comparison[
+        comparison["baseline"].isin(("B1", "B4"))
+    ]
+    figure, axis = plt.subplots(figsize=(11, 5))
+    for index, baseline in enumerate(("B1", "B4")):
+        rows = b1_b4_updates[b1_b4_updates["baseline"] == baseline]
+        counts = [
+            rows.loc[rows["scenario_name"] == name, "unnecessary_updates"].iloc[0]
+            for name in scenarios
+        ]
+        axis.bar(
+            scenario_positions + (index - 0.5) * 0.32,
+            counts,
+            0.32,
+            label=baseline,
+        )
+    axis.set_xticks(scenario_positions, scenarios, rotation=20, ha="right")
+    axis.set_ylabel("Accepted updates in stable/temporary/harmless scenarios")
+    axis.set_title("Unnecessary accepted updates: B1 vs B4")
+    axis.legend()
+    axis.grid(axis="y", linestyle="--", alpha=0.5)
+    figure.tight_layout()
+    figure.savefig(plots_dir / "unnecessary_updates_b1_b4.png", dpi=180)
+    plt.close(figure)
 
     plt.figure(figsize=(10, 4.5))
     x = np.arange(len(ablation))
