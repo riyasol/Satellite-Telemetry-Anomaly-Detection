@@ -176,7 +176,15 @@ class BenchmarkProtocolTests(unittest.TestCase):
                 return SimpleNamespace(accepted=False)
 
             def get_summary(self):
-                return {"accepted_count": 0, "rejected_count": 3}
+                return {
+                    "accepted_count": 0,
+                    "rejected_count": 3,
+                    "rejection_counts": {
+                        "retention": 0,
+                        "adaptation_validation": 3,
+                        "other": 0,
+                    },
+                }
 
         class RejectingTrainer:
             attempts = 0

@@ -125,6 +125,7 @@ class ValidationGateTests(unittest.TestCase):
         self.assertFalse(rejected.accepted)
         self.assertEqual(gate.get_summary()["accepted_count"], 1)
         self.assertEqual(gate.get_summary()["rejected_count"], 1)
+        self.assertEqual(gate.get_summary()["rejection_counts"]["retention"], 1)
 
     def test_gate_requires_improvement_on_disjoint_adaptation_validation(self):
         retention_x = np.zeros((3, 2, 1), dtype=np.float32)
@@ -155,6 +156,9 @@ class ValidationGateTests(unittest.TestCase):
         self.assertEqual(improved.adaptation_loss_improvement, 1.0)
         self.assertFalse(unchanged.accepted)
         self.assertIn("did not improve", unchanged.rejection_reason)
+        self.assertEqual(
+            gate.get_summary()["rejection_counts"]["adaptation_validation"], 1
+        )
 
     def test_gate_rejects_empty_or_nonfinite_validation_data(self):
         with self.assertRaisesRegex(ValueError, "non-zero"):

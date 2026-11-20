@@ -917,6 +917,15 @@ def run_adaptive_simulation(
         "updates_during_large_harmless_period": total_updates if scenario_id == 4 else 0,
         "candidates_accepted": int(gate_summary["accepted_count"]),
         "candidates_rejected": int(gate_summary["rejected_count"]),
+        "candidate_retention_rejections": int(
+            gate_summary["rejection_counts"]["retention"]
+        ),
+        "candidate_adaptation_validation_rejections": int(
+            gate_summary["rejection_counts"]["adaptation_validation"]
+        ),
+        "candidate_other_rejections": int(
+            gate_summary["rejection_counts"]["other"]
+        ),
         "drift_detections": len(drift_alarm_steps),
         "confirmed_drift_detections": len(confirmed_drift_steps),
         "mask_suppressed_detections": mask_suppression_count,
