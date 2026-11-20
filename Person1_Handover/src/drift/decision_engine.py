@@ -34,6 +34,13 @@ class DecisionObject:
     degradation_passed: bool
     action: AdaptationAction
     reason: str
+    raw_adwin_alarm: bool = False
+    drift_confirmed: bool = False
+    suppression_reason: str = "none"
+    anomaly_mask_fraction: float = 0.0
+    clean_reference_count: int = 0
+    clean_recent_count: int = 0
+    cut_point: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         d = asdict(self)
@@ -70,6 +77,13 @@ class DecisionEngine:
         persistence_passed: bool,
         degradation_value: float,
         degradation_passed: bool,
+        raw_adwin_alarm: Optional[bool] = None,
+        drift_confirmed: Optional[bool] = None,
+        suppression_reason: str = "none",
+        anomaly_mask_fraction: float = 0.0,
+        clean_reference_count: int = 0,
+        clean_recent_count: int = 0,
+        cut_point: int = 0,
     ) -> DecisionObject:
         """Apply three-way decision logic."""
         if not persistence_passed or severity < self.theta_low:
@@ -112,6 +126,13 @@ class DecisionEngine:
             degradation_passed=bool(degradation_passed),
             action=action,
             reason=reason,
+            raw_adwin_alarm=bool(drift_detected if raw_adwin_alarm is None else raw_adwin_alarm),
+            drift_confirmed=bool(action != AdaptationAction.NO_UPDATE if drift_confirmed is None else drift_confirmed),
+            suppression_reason=str(suppression_reason),
+            anomaly_mask_fraction=float(anomaly_mask_fraction),
+            clean_reference_count=int(clean_reference_count),
+            clean_recent_count=int(clean_recent_count),
+            cut_point=int(cut_point),
         )
         self.decisions_log.append(decision)
         return decision

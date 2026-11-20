@@ -9,6 +9,7 @@ Runs:
 from __future__ import annotations
 import json
 import os
+import shutil
 import time
 from pathlib import Path
 import numpy as np
@@ -57,8 +58,10 @@ def main():
 
     results_dir = resolve_path(cfg["output"]["results_dir"]) / "mission1"
     plots_dir = resolve_path(cfg["output"]["plot_dir"]) / "mission1"
+    p2_results_dir = resolve_path(cfg["output"].get("p2_results_dir", "P2_results"))
     results_dir.mkdir(parents=True, exist_ok=True)
     plots_dir.mkdir(parents=True, exist_ok=True)
+    p2_results_dir.mkdir(parents=True, exist_ok=True)
 
     # -------------------------------------------------------------
     # 1. Run B1–B4 across all 5 Scenarios
@@ -95,6 +98,17 @@ def main():
                 "fn_events": ev["fn_events"],
                 "total_updates": b_data["updates"],
                 "unnecessary_updates": b_data["unnecessary_updates"],
+                "raw_adwin_alarms": b_data["drift_detections"],
+                "confirmed_drifts": b_data.get("confirmed_drift_count", 0),
+                "false_confirmations": b_data.get("false_confirmation_count", 0),
+                "harmful_drift_missed": b_data.get("harmful_drift_missed", False),
+                "first_raw_alarm_step": b_data.get("first_raw_alarm_step"),
+                "first_confirmed_step": b_data.get("first_confirmed_step"),
+                "detection_delay_observations":
+                    b_data.get("detection_delay_observations"),
+                "mask_suppressions": b_data.get("mask_suppression_count", 0),
+                "insufficient_evidence_suppressions":
+                    b_data.get("insufficient_evidence_count", 0),
                 "candidates_accepted": b_data["candidates_accepted"],
                 "candidates_rejected": b_data["candidates_rejected"],
                 "runtime_seconds": b_data["runtime_total"],
@@ -104,51 +118,153 @@ def main():
     comp_csv_path = results_dir / "b1_b4_scenario_comparison.csv"
     df_comp.to_csv(comp_csv_path, index=False)
     print(f"\n[OK] Saved B1-B4 comparison table to {comp_csv_path}")
+    p2_comp_csv_path = p2_results_dir / "p2_b4_comparison.csv"
+    df_comp.to_csv(p2_comp_csv_path, index=False)
+
+    p2_event_rows = []
+    for sc_res in all_scenario_results:
+        scenario_id = sc_res["scenario"]["scenario_id"]
+        for baseline_name, baseline_data in sc_res["baselines"].items():
+            for event_row in baseline_data.get("event_log", []):
+                p2_event_rows.append({
+                    "scenario_id": scenario_id,
+                    "scenario_name": sc_res["scenario"]["name"],
+                    **event_row,
+                })
+    p2_event_csv_path = p2_results_dir / "p2_drift_decision_log.csv"
+    pd.DataFrame(p2_event_rows).to_csv(p2_event_csv_path, index=False)
 
     # -------------------------------------------------------------
-    # 2. Run Ablation Study on Scenario 3 (Persistent Harmful Drift)
+    # 2. Run Ablation Study on Scenario 3
+    #    Adaptation and final test are kept separate.
     # -------------------------------------------------------------
     print("\n---> Running Ablation Studies on Scenario 3 (Persistent Harmful Drift)...")
+
     m_cfg = cfg["model"]
     stride = int(m_cfg.get("window_stride", 10))
-    val_bounds = clean_splits["validation_bounds"].tolist()
-    test_bounds = clean_splits["test_bounds"].tolist()
-    test_start, test_end = test_bounds
+
+    val_start, val_end = clean_splits["validation_bounds"].tolist()
+    adaptation_start, adaptation_end = clean_splits["adaptation_bounds"].tolist()
+    test_start, test_end = clean_splits["test_bounds"].tolist()
+
+    seed = cfg.get("seed", 42)
+
+    # Generate Scenario 3 independently on adaptation and test segments.
+    clean_adaptation = clean_splits["values"][adaptation_start:adaptation_end].copy()
+    mod_adaptation, adaptation_scenario = generate_scenario(
+        clean_adaptation, 3, seed=seed
+    )
 
     clean_test = clean_splits["values"][test_start:test_end].copy()
-    mod_test_s3, _ = generate_scenario(clean_test, 3, seed=cfg.get("seed", 42))
-    full_vals_s3 = clean_splits["values"].copy()
-    full_vals_s3[test_start:test_end] = mod_test_s3
+    mod_test, test_scenario = generate_scenario(
+        clean_test, 3, seed=seed
+    )
 
+    full_adaptation_values = clean_splits["values"].copy()
+    full_adaptation_values[adaptation_start:adaptation_end] = mod_adaptation
+
+    full_test_values = clean_splits["values"].copy()
+    full_test_values[test_start:test_end] = mod_test
+
+    # Prepare adaptation windows.
+    adaptation_starts, adaptation_x, adaptation_y = prepare_fast_windows(
+        full_adaptation_values,
+        (adaptation_start, adaptation_end),
+        m_cfg["input_window"],
+        m_cfg["forecast_horizon"],
+        stride=stride,
+    )
+
+    # Prepare final-test windows separately.
     test_starts, test_x, test_y = prepare_fast_windows(
-        full_vals_s3, (test_start, test_end), m_cfg["input_window"], m_cfg["forecast_horizon"], stride=stride
+        full_test_values,
+        (test_start, test_end),
+        m_cfg["input_window"],
+        m_cfg["forecast_horizon"],
+        stride=stride,
     )
+
+    # Prepare clean validation windows.
     val_starts, val_x, val_y = prepare_fast_windows(
-        clean_splits["values"], (val_bounds[0], val_bounds[1]), m_cfg["input_window"], m_cfg["forecast_horizon"], stride=stride
+        clean_splits["values"],
+        (val_start, val_end),
+        m_cfg["input_window"],
+        m_cfg["forecast_horizon"],
+        stride=stride,
     )
 
-    from src.models.anomaly_scoring import window_has_anomaly, ema_reset_on_excluded
-    test_labels = window_has_anomaly(clean_splits["labels"], test_starts, m_cfg["input_window"], m_cfg["forecast_horizon"], include_input=False)
-    test_exclusion = window_has_anomaly(clean_splits["exclusion_mask"], test_starts, m_cfg["input_window"], m_cfg["forecast_horizon"], include_input=False)
+    from src.models.anomaly_scoring import (
+        window_has_anomaly,
+        ema_reset_on_excluded,
+    )
 
+    # Real test labels are used only for final offline evaluation.
+    test_labels = window_has_anomaly(
+        clean_splits["labels"],
+        test_starts,
+        m_cfg["input_window"],
+        m_cfg["forecast_horizon"],
+        include_input=False,
+    )
+
+    # Determine the anomaly threshold using validation data only.
     base_model = load_forecaster(base_checkpoint, device)
-    from src.evaluation.benchmark import score_model_on_windows
-    val_scores, _ = score_model_on_windows(base_model, val_x, val_y, device)
-    val_bad = window_has_anomaly(clean_splits["exclusion_mask"], val_starts, m_cfg["input_window"], m_cfg["forecast_horizon"], include_input=True)
-    val_ema = ema_reset_on_excluded(val_scores, ~val_bad, cfg["anomaly"]["ema_alpha"])
-    norm_val_scores = val_ema[np.isfinite(val_ema)]
-    threshold = float(np.quantile(norm_val_scores, cfg["anomaly"]["threshold_quantile"]))
 
+    from src.evaluation.benchmark import score_model_on_windows
+
+    val_scores, _ = score_model_on_windows(
+        base_model, val_x, val_y, device
+    )
+
+    val_bad = window_has_anomaly(
+        clean_splits["exclusion_mask"],
+        val_starts,
+        m_cfg["input_window"],
+        m_cfg["forecast_horizon"],
+        include_input=True,
+    )
+
+    val_ema = ema_reset_on_excluded(
+        val_scores,
+        ~val_bad,
+        cfg["anomaly"]["ema_alpha"],
+    )
+
+    norm_val_scores = val_ema[np.isfinite(val_ema)]
+
+    if len(norm_val_scores) == 0:
+        raise ValueError("No valid clean validation scores for threshold calibration.")
+
+    threshold = float(
+        np.quantile(
+            norm_val_scores,
+            cfg["anomaly"]["threshold_quantile"],
+        )
+    )
+
+    # Replay seed is created from training data only.
     from src.continual.replay_buffer import ReplayBuffer
-    replay_seed = ReplayBuffer(capacity=cfg["continual"]["replay_capacity"], seed=cfg.get("seed", 42))
+
+    replay_seed = ReplayBuffer(
+        capacity=cfg["continual"]["replay_capacity"],
+        seed=seed,
+    )
+
     replay_seed.populate_from_training_split(
-        clean_splits["values"], clean_splits["exclusion_mask"],
-        clean_splits["train_bounds"][0], clean_splits["train_bounds"][1],
-        m_cfg["input_window"], m_cfg["forecast_horizon"], stride=50, max_samples=300
+        clean_splits["values"],
+        clean_splits["exclusion_mask"],
+        clean_splits["train_bounds"][0],
+        clean_splits["train_bounds"][1],
+        m_cfg["input_window"],
+        m_cfg["forecast_horizon"],
+        stride=50,
+        max_samples=300,
     )
 
     ablation_variants = [
         "Complete_B4",
+        "B4_original",
+        "B4_dual",
         "No_Severity",
         "No_Persistence",
         "No_Degradation",
@@ -156,13 +272,19 @@ def main():
     ]
 
     ablation_rows = []
+
     for var in ablation_variants:
         print(f"     Testing variant: {var}...")
+
         abl_res = run_ablation_simulation(
             ablation_variant=var,
-            test_x=test_x, test_y=test_y,
-            test_labels=test_labels, test_exclusion=test_exclusion,
-            val_x=val_x, val_y=val_y,
+            adaptation_x=adaptation_x,
+            adaptation_y=adaptation_y,
+            test_x=test_x,
+            test_y=test_y,
+            test_labels=test_labels,
+            val_x=val_x,
+            val_y=val_y,
             norm_val_scores=norm_val_scores,
             base_model=base_model,
             replay_seed_buffer=replay_seed,
@@ -171,7 +293,9 @@ def main():
             threshold=threshold,
             scenario_id=3,
         )
+
         ev = abl_res["event_metrics"]
+
         ablation_rows.append({
             "variant": var,
             "f0.5_event": ev["f0.5_event"],
@@ -182,12 +306,15 @@ def main():
             "total_updates": abl_res["updates"],
             "candidates_accepted": abl_res["candidates_accepted"],
             "candidates_rejected": abl_res["candidates_rejected"],
+            "adaptation_steps": abl_res["adaptation_steps"],
+            "final_test_steps": abl_res["final_test_steps"],
             "runtime_seconds": abl_res["runtime_total"],
         })
 
     df_abl = pd.DataFrame(ablation_rows)
     abl_csv_path = results_dir / "ablation_study_results.csv"
     df_abl.to_csv(abl_csv_path, index=False)
+
     print(f"[OK] Saved ablation study results to {abl_csv_path}")
 
     # -------------------------------------------------------------
@@ -201,9 +328,13 @@ def main():
     x = np.arange(len(scenarios_list))
     width = 0.20
 
-    for i, b in enumerate(["B1", "B2", "B3", "B4"]):
+    for i, b in enumerate(["B1", "B2", "B3", "B4_original", "B4_dual"]):
         sub = df_comp[df_comp["baseline"] == b]
-        f_scores = [sub[sub["scenario_name"] == sc]["f0.5_event"].values[0] for sc in scenarios_list]
+        # Safely extract f0.5 scores; replace None with 0.0 for plotting
+        f_scores = []
+        for sc in scenarios_list:
+            val = sub[sub["scenario_name"] == sc]["f0.5_event"].values[0]
+            f_scores.append(0.0 if val is None else float(val))
         plt.bar(x + (i - 1.5) * width, f_scores, width=width, label=b)
 
     plt.xticks(x, [f"S{i+1}: {s}" for i, s in enumerate(scenarios_list)], rotation=15, ha="right", fontsize=9)
@@ -238,11 +369,18 @@ def main():
     # Plot 3: Ablation Study Comparison
     plt.figure(figsize=(10, 4.5))
     x = np.arange(len(df_abl))
-    colors = ["#2ca02c", "#1f77b4", "#ff7f0e", "#d62728", "#9467bd"]
-    bars = plt.bar(x, df_abl["f0.5_event"], color=colors, width=0.55)
-    for bar in bars:
-        yval = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2.0, yval + 0.015, f"{yval:.3f}", ha="center", va="bottom", fontsize=9, fontweight="bold")
+    colors = [
+        "#2ca02c", "#1f77b4", "#ff7f0e", "#d62728",
+        "#9467bd", "#8c564b", "#e377c2",
+    ]
+    # Safely extract f0.5 scores; use np.nan for None and label N/A in plot
+    f_scores = [np.nan if v is None else float(v) for v in df_abl["f0.5_event"]]
+    bars = plt.bar(x, f_scores, color=colors, width=0.55)
+    for bar, val in zip(bars, f_scores):
+        height = 0 if np.isnan(val) else bar.get_height()
+        label = "N/A" if np.isnan(val) else f"{height:.3f}"
+        plt.text(bar.get_x() + bar.get_width()/2.0, height + 0.015, label,
+                 ha="center", va="bottom", fontsize=9, fontweight="bold")
     plt.xticks(x, df_abl["variant"].str.replace("_", " "), rotation=15, ha="right", fontsize=9)
     plt.ylabel("Event-wise F0.5", fontsize=11)
     plt.ylim(0, 1.15)
@@ -257,10 +395,14 @@ def main():
     # Plot 4: Masking vs Unmasked Precision/F0.5
     plt.figure(figsize=(7, 4.5))
     mask_df = df_abl[df_abl["variant"].isin(["Complete_B4", "No_Anomaly_Masking"])]
-    bars = plt.bar(["With Masking (B4)", "Without Masking"], mask_df["f0.5_event"], color=["#2ca02c", "#d62728"], width=0.45)
-    for bar in bars:
-        yval = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2.0, yval + 0.02, f"{yval:.3f}", ha="center", va="bottom", fontsize=10, fontweight="bold")
+    # Use np.nan for missing values; keep original DataFrame unchanged
+    f_scores = [np.nan if v is None else float(v) for v in mask_df["f0.5_event"]]
+    bars = plt.bar(["With Masking (B4)", "Without Masking"], f_scores, color=["#2ca02c", "#d62728"], width=0.45)
+    for bar, val in zip(bars, f_scores):
+        height = 0 if np.isnan(val) else bar.get_height()
+        label = "N/A" if np.isnan(val) else f"{height:.3f}"
+        plt.text(bar.get_x() + bar.get_width()/2.0, height + 0.02, label,
+                 ha="center", va="bottom", fontsize=10, fontweight="bold")
     plt.ylabel("Event-wise F0.5", fontsize=11)
     plt.ylim(0, 1.15)
     plt.title("Impact of Anomaly Masking on Detection Reliability", fontsize=12, fontweight="bold")
@@ -270,6 +412,40 @@ def main():
     plt.savefig(p4_path, dpi=200)
     plt.close()
     print(f"  Saved figure: {p4_path}")
+
+    for plot_path in (p1_path, p2_path, p3_path, p4_path):
+        shutil.copy2(plot_path, p2_results_dir / plot_path.name)
+
+    p2_summary = {
+        "status": "completed",
+        "scenario_count": len(all_scenario_results),
+        "baselines": sorted(
+            all_scenario_results[0]["baselines"].keys()
+        ) if all_scenario_results else [],
+        "b1_checkpoint": str(base_checkpoint),
+        "b1_retrained": False,
+        "comparison_csv": str(p2_comp_csv_path),
+        "decision_log_csv": str(p2_event_csv_path),
+        "scenario_calibration": [
+            {
+                "scenario_id": result["scenario"]["scenario_id"],
+                "scenario_name": result["scenario"]["name"],
+                **result["calibration"],
+            }
+            for result in all_scenario_results
+        ],
+        "mask_dominance_threshold":
+            cfg["drift"].get("mask_dominance_threshold", 0.75),
+        "threshold_note": (
+            "Mask-dominance cutoff is configurable; interpret comparison results "
+            "using validation/adaptation diagnostics and do not infer superiority "
+            "from update counts alone."
+        ),
+    }
+    (p2_results_dir / "p2_experiment_summary.json").write_text(
+        json.dumps(p2_summary, indent=2),
+        encoding="utf-8",
+    )
 
     print("\n" + "=" * 70)
     print("ALL EXPERIMENTAL BENCHMARKS & DELIVERABLES COMPLETED SUCCESSFULLY!")

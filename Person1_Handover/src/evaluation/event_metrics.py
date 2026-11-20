@@ -43,18 +43,29 @@ def compute_event_metrics(
     pred_events = extract_events(y_pred)
 
     if not true_events and not pred_events:
-        return {
-            "tp_events": 0, "fp_events": 0, "fn_events": 0, "total_true_events": 0,
-            "precision": 1.0, "recall": 1.0, "f0.5_event": 1.0, "false_alarm_rate": 0.0
-        }
-
+       return {
+    "tp_events": 0,
+    "fp_events": 0,
+    "fn_events": 0,
+    "total_true_events": 0,
+    "total_pred_events": 0,
+    "precision": None,
+    "recall": None,
+    "f0.5_event": None,
+    "false_alarm_rate": 0.0,
+}
     if not true_events and pred_events:
         return {
-            "tp_events": 0, "fp_events": len(pred_events), "fn_events": 0, "total_true_events": 0,
-            "precision": 0.0, "recall": 1.0, "f0.5_event": 0.0,
-            "false_alarm_rate": float(len(pred_events) / max(1, len(y_pred)))
-        }
-
+    "tp_events": 0,
+    "fp_events": len(pred_events),
+    "fn_events": 0,
+    "total_true_events": 0,
+    "total_pred_events": len(pred_events),
+    "precision": None,
+    "recall": None,
+    "f0.5_event": None,
+    "false_alarm_rate": float(len(pred_events) / max(1, len(y_pred))),
+}
     # Evaluate True Positives and False Negatives for true events
     tp_events = 0
     fn_events = 0

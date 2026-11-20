@@ -92,3 +92,162 @@ class AnomalyMasker:
     def get_mask_log(self) -> List[Dict[str, Any]]:
         return self.masked_intervals_log
 
+    @staticmethod
+    def mask_dominance(predicted_flags: np.ndarray) -> float:
+        """Return the fraction of predicted-anomaly entries in an aligned window."""
+        flags = np.asarray(predicted_flags, dtype=bool).reshape(-1)
+        if flags.size == 0:
+            return 0.0
+        finite = np.isfinite(flags.astype(np.float64))
+        if not np.all(finite):
+            return 0.0
+        return float(np.mean(flags))
+
+    @staticmethod
+    def clean_residual_window(
+        residuals: np.ndarray,
+        predicted_flags: np.ndarray,
+    ) -> np.ndarray:
+        """Remove predicted anomalous residuals by aligned position."""
+        values = np.asarray(residuals, dtype=np.float64).reshape(-1)
+        flags = np.asarray(predicted_flags, dtype=bool).reshape(-1)
+        if values.size != flags.size:
+            raise ValueError(
+                f"Residual and predicted-mask lengths differ: {values.size} != {flags.size}"
+            )
+        return values[np.isfinite(values) & ~flags]
+
+    @staticmethod
+    def split_adwin_window(
+        residuals: np.ndarray,
+        predicted_flags: np.ndarray,
+        cut_point: int,
+        min_clean_samples: int = 20,
+    ) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
+        """Split by local ADWIN cut position, then remove predicted anomalies."""
+        values = np.asarray(residuals, dtype=np.float64).reshape(-1)
+        flags = np.asarray(predicted_flags, dtype=bool).reshape(-1)
+        if values.size != flags.size:
+            raise ValueError(
+                f"ADWIN residual and predicted-mask lengths differ: {values.size} != {flags.size}"
+            )
+        if cut_point <= 0 or cut_point >= values.size:
+            return (
+                np.empty(0, dtype=np.float64),
+                np.empty(0, dtype=np.float64),
+                {
+                    "suppression_reason": "invalid_cut_position",
+                    "reference_clean_count": 0,
+                    "recent_clean_count": 0,
+                },
+            )
+
+        reference = AnomalyMasker.clean_residual_window(
+            values[:cut_point], flags[:cut_point]
+        )
+        recent = AnomalyMasker.clean_residual_window(
+            values[cut_point:], flags[cut_point:]
+        )
+        reference_count = int(reference.size)
+        recent_count = int(recent.size)
+        reason = "none"
+        if reference_count < int(min_clean_samples):
+            reason = "insufficient_clean_reference"
+        elif recent_count < int(min_clean_samples):
+            reason = "insufficient_clean_recent"
+
+        return reference, recent, {
+            "suppression_reason": reason,
+            "reference_clean_count": reference_count,
+            "recent_clean_count": recent_count,
+        }
+
+
+def confirm_adwin_alarm(
+    residual_window: np.ndarray,
+    window_indices: np.ndarray,
+    predicted_mask_by_stream_index: np.ndarray,
+    cut_point: int,
+    mask_dominance_threshold: float,
+    min_clean_reference_samples: int,
+    min_clean_recent_samples: int,
+) -> Dict[str, Any]:
+    """Confirm a raw ADWIN alarm using anomaly-mask evidence and clean samples."""
+    mask_dominance_threshold = float(mask_dominance_threshold)
+    min_clean_reference_samples = int(min_clean_reference_samples)
+    min_clean_recent_samples = int(min_clean_recent_samples)
+    if not 0.0 <= mask_dominance_threshold <= 1.0:
+        raise ValueError("mask_dominance_threshold must be between 0 and 1")
+    if min_clean_reference_samples <= 0 or min_clean_recent_samples <= 0:
+        raise ValueError("minimum clean sample counts must be positive")
+
+    residuals = np.asarray(residual_window, dtype=np.float64).reshape(-1)
+    indices = np.asarray(window_indices, dtype=np.int64).reshape(-1)
+    mask = np.asarray(predicted_mask_by_stream_index, dtype=bool).reshape(-1)
+
+    if residuals.size != indices.size:
+        raise ValueError(
+            f"ADWIN residual/window-index lengths differ: {residuals.size} != {indices.size}"
+        )
+    if indices.size == 0:
+        return {
+            "raw_adwin_alarm": True,
+            "drift_confirmed": False,
+            "suppression_reason": "insufficient_window",
+            "anomaly_mask_fraction": 0.0,
+            "reference_clean_count": 0,
+            "recent_clean_count": 0,
+            "cut_point": int(cut_point),
+        }
+
+    valid_indices = (indices >= 0) & (indices < mask.size)
+    if not np.all(valid_indices):
+        raise ValueError("ADWIN window index is outside the predicted-mask stream")
+
+    aligned_flags = mask[indices]
+    mask_fraction = float(np.mean(aligned_flags)) if aligned_flags.size else 0.0
+    if cut_point <= 0 or cut_point >= residuals.size:
+        return {
+            "raw_adwin_alarm": True,
+            "drift_confirmed": False,
+            "suppression_reason": "invalid_cut_position",
+            "anomaly_mask_fraction": mask_fraction,
+            "reference_clean_count": 0,
+            "recent_clean_count": 0,
+            "cut_point": int(cut_point),
+        }
+
+    reference_flags = aligned_flags[:cut_point]
+    recent_flags = aligned_flags[cut_point:]
+    reference = residuals[:cut_point][
+        np.isfinite(residuals[:cut_point]) & ~reference_flags
+    ]
+    recent = residuals[cut_point:][
+        np.isfinite(residuals[cut_point:]) & ~recent_flags
+    ]
+
+    reference_count = int(reference.size)
+    recent_count = int(recent.size)
+    if mask_fraction > mask_dominance_threshold:
+        reason = "anomaly_mask_dominance"
+    elif reference_count < min_clean_reference_samples:
+        reason = "insufficient_clean_reference"
+    elif recent_count < min_clean_recent_samples:
+        reason = "insufficient_clean_recent"
+    else:
+        reason = "none"
+
+    return {
+        "raw_adwin_alarm": True,
+        "drift_confirmed": reason == "none",
+        "suppression_reason": reason,
+        "anomaly_mask_fraction": mask_fraction,
+        "reference_clean_count": reference_count,
+        "recent_clean_count": recent_count,
+        "cut_point": int(cut_point),
+        "reference": reference,
+        "recent": recent,
+        "reference": reference,
+        "recent": recent,
+    }
+
