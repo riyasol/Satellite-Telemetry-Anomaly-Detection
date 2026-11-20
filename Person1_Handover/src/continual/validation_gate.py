@@ -1,7 +1,7 @@
 """Validation gate for continual learning.
 
-Evaluates candidate models against the currently accepted model on a fixed, separate
-validation dataset. Candidates are only promoted if they satisfy safety criteria.
+Candidates must retain performance on clean telemetry and improve on a separate
+held-out adaptation segment before promotion.
 """
 from __future__ import annotations
 import time
@@ -28,6 +28,9 @@ class CandidateEvaluationResult:
     evaluation_time_seconds: float
     rejection_reason: Optional[str]
     metadata: Dict[str, Any]
+    current_adaptation_val_loss: Optional[float] = None
+    candidate_adaptation_val_loss: Optional[float] = None
+    adaptation_loss_improvement: Optional[float] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -43,6 +46,8 @@ class ValidationGate:
         device: torch.device,
         tolerance: float = 0.02, # Candidate loss must not exceed current loss * (1 + tolerance)
         batch_size: int = 128,
+        adaptation_val_x: Optional[np.ndarray] = None,
+        adaptation_val_y: Optional[np.ndarray] = None,
     ):
         val_x = np.asarray(val_x, dtype=np.float32)
         val_y = np.asarray(val_y, dtype=np.float32)
@@ -58,6 +63,10 @@ class ValidationGate:
             raise ValueError("tolerance must be finite and non-negative.")
         if batch_size <= 0:
             raise ValueError("batch_size must be positive.")
+        if (adaptation_val_x is None) != (adaptation_val_y is None):
+            raise ValueError(
+                "Adaptation validation inputs and targets must be provided together."
+            )
 
         self.val_x = val_x
         self.val_y = val_y
@@ -65,22 +74,65 @@ class ValidationGate:
         self.tolerance = float(tolerance)
         self.batch_size = int(batch_size)
 
-        # Prepare PyTorch DataLoader for validation
         ds = TensorDataset(torch.from_numpy(val_x).float(), torch.from_numpy(val_y).float())
         self.val_loader = DataLoader(ds, batch_size=self.batch_size, shuffle=False)
+        self.adaptation_val_loader = None
+        if adaptation_val_x is not None and adaptation_val_y is not None:
+            adaptation_val_x = np.asarray(adaptation_val_x, dtype=np.float32)
+            adaptation_val_y = np.asarray(adaptation_val_y, dtype=np.float32)
+            if adaptation_val_x.ndim != 3 or adaptation_val_y.ndim != 3:
+                raise ValueError(
+                    "Adaptation validation inputs and targets must be 3-D window arrays."
+                )
+            if (
+                len(adaptation_val_x) == 0
+                or len(adaptation_val_x) != len(adaptation_val_y)
+            ):
+                raise ValueError(
+                    "Adaptation validation inputs and targets must have equal, "
+                    "non-zero lengths."
+                )
+            if (
+                adaptation_val_x.shape[2] != val_x.shape[2]
+                or adaptation_val_y.shape[2] != val_y.shape[2]
+                or adaptation_val_x.shape[1] != val_x.shape[1]
+                or adaptation_val_y.shape[1] != val_y.shape[1]
+            ):
+                raise ValueError(
+                    "Adaptation and retention validation window shapes must match."
+                )
+            if (
+                not np.isfinite(adaptation_val_x).all()
+                or not np.isfinite(adaptation_val_y).all()
+            ):
+                raise ValueError("Adaptation validation data must contain only finite values.")
+            adaptation_ds = TensorDataset(
+                torch.from_numpy(adaptation_val_x).float(),
+                torch.from_numpy(adaptation_val_y).float(),
+            )
+            self.adaptation_val_loader = DataLoader(
+                adaptation_ds, batch_size=self.batch_size, shuffle=False
+            )
         self.criterion = nn.MSELoss()
 
         self.evaluation_history: List[CandidateEvaluationResult] = []
         self.accepted_promotions_count = 0
         self.rejected_count = 0
 
-    def evaluate_model_loss(self, model: LSTMForecaster) -> float:
+    def evaluate_model_loss(
+        self, model: LSTMForecaster, adaptation: bool = False
+    ) -> float:
         """Compute average validation MSE loss."""
+        loader = (
+            self.adaptation_val_loader if adaptation else self.val_loader
+        )
+        if loader is None:
+            raise ValueError("Adaptation validation data was not configured.")
         model.eval()
         total_loss = 0.0
         total_samples = 0
         with torch.no_grad():
-            for bx, by in self.val_loader:
+            for bx, by in loader:
                 bx = bx.to(self.device)
                 by = by.to(self.device)
                 pred = model(bx)
@@ -102,23 +154,60 @@ class ValidationGate:
 
         current_loss = self.evaluate_model_loss(current_model)
         candidate_loss = self.evaluate_model_loss(candidate_model)
+        current_adaptation_loss = None
+        candidate_adaptation_loss = None
+        adaptation_loss_improvement = None
+        if self.adaptation_val_loader is not None:
+            current_adaptation_loss = self.evaluate_model_loss(
+                current_model, adaptation=True
+            )
+            candidate_adaptation_loss = self.evaluate_model_loss(
+                candidate_model, adaptation=True
+            )
+            adaptation_loss_improvement = (
+                current_adaptation_loss - candidate_adaptation_loss
+            )
 
         loss_improvement = current_loss - candidate_loss
         max_allowable_loss = current_loss * (1.0 + self.tolerance)
 
         if not np.isfinite(current_loss):
             raise RuntimeError("Current model produced a non-finite validation loss.")
+        if (
+            current_adaptation_loss is not None
+            and not np.isfinite(current_adaptation_loss)
+        ):
+            raise RuntimeError(
+                "Current model produced a non-finite adaptation validation loss."
+            )
 
-        # Candidate is accepted only when its loss is finite and within tolerance.
-        if np.isfinite(candidate_loss) and candidate_loss <= max_allowable_loss:
+        retention_passed = (
+            np.isfinite(candidate_loss) and candidate_loss <= max_allowable_loss
+        )
+        adaptation_passed = (
+            candidate_adaptation_loss is None
+            or (
+                np.isfinite(candidate_adaptation_loss)
+                and candidate_adaptation_loss < current_adaptation_loss
+            )
+        )
+
+        if retention_passed and adaptation_passed:
             accepted = True
             rejection_reason = None
             self.accepted_promotions_count += 1
+        elif not retention_passed:
+            accepted = False
+            rejection_reason = (
+                f"Candidate retention validation MSE ({candidate_loss:.6f}) exceeded "
+                f"allowable limit ({max_allowable_loss:.6f}, baseline={current_loss:.6f})"
+            )
+            self.rejected_count += 1
         else:
             accepted = False
             rejection_reason = (
-                f"Candidate validation MSE ({candidate_loss:.6f}) exceeded "
-                f"allowable limit ({max_allowable_loss:.6f}, baseline={current_loss:.6f})"
+                "Candidate did not improve held-out adaptation validation MSE "
+                f"({candidate_adaptation_loss:.6f} vs. {current_adaptation_loss:.6f})."
             )
             self.rejected_count += 1
 
@@ -135,6 +224,9 @@ class ValidationGate:
             evaluation_time_seconds=eval_time,
             rejection_reason=rejection_reason,
             metadata=candidate_metadata,
+            current_adaptation_val_loss=current_adaptation_loss,
+            candidate_adaptation_val_loss=candidate_adaptation_loss,
+            adaptation_loss_improvement=adaptation_loss_improvement,
         )
         self.evaluation_history.append(result)
         return result

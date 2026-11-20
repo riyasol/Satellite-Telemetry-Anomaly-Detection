@@ -83,6 +83,8 @@ def _result_row(
         "insufficient_evidence_suppressions":
             result.get("insufficient_evidence_suppressions", 0),
         "masked_windows": result.get("masked_windows", 0),
+        "sustained_elevation_windows":
+            result.get("sustained_elevation_windows", 0),
         "candidates_accepted": result.get("candidates_accepted", 0),
         "candidates_rejected": result.get("candidates_rejected", 0),
         "first_adaptation_delay_windows":

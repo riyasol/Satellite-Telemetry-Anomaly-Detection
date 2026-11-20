@@ -37,6 +37,7 @@ evaluation:
   event_tolerance_requires_team_approval: true
 drift:
   detector: adwin
+  persistent_elevation_min_windows: 100
   reference_window_size: 200
   recent_window_size: 100
   monitoring_stride: 10
@@ -65,9 +66,11 @@ continual:
   validation_tolerance: 0.02
   b2_periodic_interval: 1000
   adaptation_fraction_of_validation: 0.5
+  candidate_validation_fraction_of_adaptation: 0.25
 experiments:
   minimum_candidate_windows: 30
   periodic_minimum_candidate_windows: 50
+  minimum_candidate_validation_windows: 20
   minimum_distribution_samples: 20
   minimum_adaptation_windows: 40
   masking_ablation:

@@ -110,6 +110,24 @@ def _longest_clean_interval(
     return result
 
 
+class SustainedElevationTracker:
+    """Distinguish a persistent high-residual regime from short masked episodes."""
+
+    def __init__(self, minimum_windows: int):
+        if minimum_windows <= 0:
+            raise ValueError("minimum_windows must be positive.")
+        self.minimum_windows = int(minimum_windows)
+        self.consecutive_windows = 0
+
+    def update(self, score: float, threshold: float) -> bool:
+        if not np.isfinite(score) or not np.isfinite(threshold):
+            raise ValueError("Elevation scores and threshold must be finite.")
+        self.consecutive_windows = (
+            self.consecutive_windows + 1 if score > threshold else 0
+        )
+        return self.consecutive_windows >= self.minimum_windows
+
+
 def prepare_scenario_data(
     scenario_id: int,
     cfg: Dict[str, Any],
@@ -118,7 +136,7 @@ def prepare_scenario_data(
     device: torch.device,
     inject_anomalies: bool = False,
 ) -> Dict[str, Any]:
-    """Build disjoint calibration, adaptation, and held-out evaluation data.
+    """Build disjoint calibration, adaptation, adaptation-validation, and test data.
 
     Ground-truth annotations are used only to select clean calibration/adaptation
     windows and to compute final offline metrics. They are not passed to the
@@ -186,10 +204,50 @@ def prepare_scenario_data(
             int(continual_cfg.get("b2_periodic_interval", 1000)),
         ) * stride
     )
+    candidate_validation_fraction = float(
+        continual_cfg.get("candidate_validation_fraction_of_adaptation", 0.25)
+    )
+    if not 0.0 < candidate_validation_fraction < 1.0:
+        raise ValueError(
+            "candidate_validation_fraction_of_adaptation must be in (0, 1)."
+        )
+    minimum_candidate_validation_windows = int(
+        experiment_cfg.get("minimum_candidate_validation_windows", 20)
+    )
+    if minimum_candidate_validation_windows <= 0:
+        raise ValueError("minimum_candidate_validation_windows must be positive.")
+    min_rows_for_candidate_validation = (
+        input_window
+        + horizon
+        + minimum_candidate_validation_windows * stride
+    )
+    min_rows_for_stream = max(
+        math.ceil(min_rows_for_stream / (1.0 - candidate_validation_fraction)),
+        math.ceil(
+            min_rows_for_candidate_validation / candidate_validation_fraction
+        ),
+    )
     adaptation_bounds = _longest_clean_interval(
         exclusion, calibration_end, val_end, min_rows_for_stream
     )
-    adaptation_clean = values[adaptation_bounds[0]:adaptation_bounds[1]].copy()
+    adaptation_validation_start = adaptation_bounds[0] + int(
+        (adaptation_bounds[1] - adaptation_bounds[0])
+        * (1.0 - candidate_validation_fraction)
+    )
+    adaptation_stream_bounds = (
+        adaptation_bounds[0],
+        adaptation_validation_start,
+    )
+    adaptation_validation_bounds = (
+        adaptation_validation_start,
+        adaptation_bounds[1],
+    )
+    adaptation_clean = values[
+        adaptation_stream_bounds[0]:adaptation_stream_bounds[1]
+    ].copy()
+    adaptation_validation_clean = values[
+        adaptation_validation_bounds[0]:adaptation_validation_bounds[1]
+    ].copy()
     scenario_parameters = experiment_cfg.get("scenarios", {}).get(
         str(scenario_id), {}
     )
@@ -197,6 +255,12 @@ def prepare_scenario_data(
         adaptation_clean,
         scenario_id,
         seed=int(cfg.get("seed", 42)),
+        scenario_parameters=scenario_parameters,
+    )
+    adaptation_validation_values, _ = generate_scenario(
+        adaptation_validation_clean,
+        scenario_id,
+        seed=int(cfg.get("seed", 42)) + 1,
         scenario_parameters=scenario_parameters,
     )
     adaptation_anomaly_points = np.zeros(len(adaptation_values), dtype=np.uint8)
@@ -217,6 +281,15 @@ def prepare_scenario_data(
         input_window,
         horizon,
         stride,
+    )
+    adaptation_validation_starts, adaptation_validation_x, adaptation_validation_y = (
+        prepare_fast_windows(
+            adaptation_validation_values,
+            (0, len(adaptation_validation_values)),
+            input_window,
+            horizon,
+            stride,
+        )
     )
 
     test_clean = values[test_start:test_end].copy()
@@ -270,7 +343,10 @@ def prepare_scenario_data(
         include_input=False,
     )
 
-    gaps_seconds = np.diff(timestamps[adaptation_bounds[0]:adaptation_bounds[1]]) / 1e9
+    gaps_seconds = (
+        np.diff(timestamps[adaptation_stream_bounds[0]:adaptation_stream_bounds[1]])
+        / 1e9
+    )
     nominal_gap = float(np.median(gaps_seconds)) if len(gaps_seconds) else 30.0
     window_seconds = max(nominal_gap * stride, 1.0)
     pre_margin_windows = int(
@@ -287,7 +363,14 @@ def prepare_scenario_data(
 
     scenario_dict = scenario.to_dict()
     scenario_dict.update({
-        "adaptation_bounds": [int(adaptation_bounds[0]), int(adaptation_bounds[1])],
+        "adaptation_bounds": [
+            int(adaptation_stream_bounds[0]),
+            int(adaptation_stream_bounds[1]),
+        ],
+        "adaptation_validation_bounds": [
+            int(adaptation_validation_bounds[0]),
+            int(adaptation_validation_bounds[1]),
+        ],
         "calibration_bounds": [int(val_start), int(calibration_end)],
         "evaluation_bounds": [int(test_start), int(test_end)],
         "adaptation_drift_start_window": drift_start_window,
@@ -306,6 +389,9 @@ def prepare_scenario_data(
         "normal_validation_raw_scores": normal_raw_scores,
         "gate_x": gate_x,
         "gate_y": gate_y,
+        "adaptation_validation_x": adaptation_validation_x,
+        "adaptation_validation_y": adaptation_validation_y,
+        "adaptation_validation_starts": adaptation_validation_starts,
         "adaptation_starts": adaptation_starts,
         "adaptation_x": adaptation_x,
         "adaptation_y": adaptation_y,
@@ -392,6 +478,8 @@ def run_adaptive_simulation(
         device,
         tolerance=float(continual_cfg["validation_tolerance"]),
         batch_size=int(model_cfg["batch_size"]),
+        adaptation_val_x=scenario_data["adaptation_validation_x"],
+        adaptation_val_y=scenario_data["adaptation_validation_y"],
     )
     replay = copy.deepcopy(replay_seed_buffer)
     namespace = (
@@ -471,6 +559,10 @@ def run_adaptive_simulation(
     recent_entries = []
     recent_residuals = []
     ema_state = None
+    adaptation_ema_state = None
+    elevation_tracker = SustainedElevationTracker(
+        int(drift_cfg.get("persistent_elevation_min_windows", 100))
+    )
     blocked_until = -1
     update_counts = {"FINE_TUNE": 0, "STRONG_UPDATE": 0}
     request_count = 0
@@ -489,6 +581,7 @@ def run_adaptive_simulation(
     trace = {
         "raw_mse": cached_scores.copy(),
         "predicted_anomaly": np.zeros(len(cached_scores), dtype=np.uint8),
+        "sustained_elevation": np.zeros(len(cached_scores), dtype=np.uint8),
         "masked": np.zeros(len(cached_scores), dtype=np.uint8),
         "raw_adwin_alarm": np.zeros(len(cached_scores), dtype=np.uint8),
         "drift_alarm": np.zeros(len(cached_scores), dtype=np.uint8),
@@ -540,21 +633,34 @@ def run_adaptive_simulation(
 
     for step in range(len(adaptation_x)):
         score = float(cached_scores[step])
-        if use_masking and step <= blocked_until:
+        alpha = float(anomaly_cfg["ema_alpha"])
+        adaptation_ema_state = (
+            score
+            if adaptation_ema_state is None
+            else alpha * score + (1.0 - alpha) * adaptation_ema_state
+        )
+        sustained_elevation = elevation_tracker.update(
+            adaptation_ema_state, scenario_data["threshold"]
+        )
+        trace["sustained_elevation"][step] = int(sustained_elevation)
+
+        if use_masking and step <= blocked_until and not sustained_elevation:
             ema_state = None
             trace["masked"][step] = 1
             predicted_mask_by_stream_index[step] = True
             masked_window_indices.add(step)
-            if baseline_name == "B4":
-                update_b4_detector(step, score)
             continue
 
-        alpha = float(anomaly_cfg["ema_alpha"])
+        if sustained_elevation:
+            predicted_mask_by_stream_index[step] = False
+            trace["masked"][step] = 0
+            masked_window_indices.discard(step)
+
         ema_state = score if ema_state is None else alpha * score + (1.0 - alpha) * ema_state
         is_predicted_anomaly = bool(ema_state > scenario_data["threshold"])
         trace["predicted_anomaly"][step] = int(is_predicted_anomaly)
 
-        if use_masking and is_predicted_anomaly:
+        if use_masking and is_predicted_anomaly and not sustained_elevation:
             pre_start = max(0, step - pre_margin)
             recent_entries = [
                 entry for entry in recent_entries if entry["step"] < pre_start
@@ -569,8 +675,6 @@ def run_adaptive_simulation(
             persistence.reset()
             blocked_until = step + post_margin
             ema_state = None
-            if baseline_name == "B4":
-                update_b4_detector(step, score)
             continue
 
         recent_entries.append({
@@ -800,6 +904,9 @@ def run_adaptive_simulation(
         "mask_suppressed_detections": mask_suppression_count,
         "insufficient_evidence_suppressions": insufficient_evidence_count,
         "masked_windows": len(masked_window_indices),
+        "sustained_elevation_windows": int(
+            trace["sustained_elevation"].sum()
+        ),
         "first_adaptation_delay_windows": delay_windows,
         "first_alarm_delay_windows": (
             first_alarm_after_drift - drift_start_window

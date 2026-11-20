@@ -3,7 +3,10 @@ import unittest
 import numpy as np
 import torch
 
-from src.evaluation.benchmark import prepare_scenario_data
+from src.evaluation.benchmark import (
+    SustainedElevationTracker,
+    prepare_scenario_data,
+)
 from src.evaluation.event_metrics import compute_event_metrics
 from src.models.lstm_forecaster import LSTMForecaster
 from src.scenarios.drift_generator import (
@@ -57,6 +60,15 @@ class ScenarioTests(unittest.TestCase):
         self.assertEqual(int(np.count_nonzero(changed[:, 1])), 0)
         self.assertGreater(float(changed[:, [0, 2]].max()), 0.0)
 
+    def test_sustained_elevation_requires_consecutive_high_windows(self):
+        tracker = SustainedElevationTracker(minimum_windows=3)
+
+        self.assertFalse(tracker.update(2.0, 1.0))
+        self.assertFalse(tracker.update(2.0, 1.0))
+        self.assertTrue(tracker.update(2.0, 1.0))
+        self.assertFalse(tracker.update(0.5, 1.0))
+        self.assertFalse(tracker.update(2.0, 1.0))
+
 
 class BenchmarkProtocolTests(unittest.TestCase):
     def test_scenario_adapts_on_validation_and_evaluates_on_test(self):
@@ -109,8 +121,13 @@ class BenchmarkProtocolTests(unittest.TestCase):
         )
 
         adaptation_bounds = prepared["scenario"]["adaptation_bounds"]
+        adaptation_validation_bounds = prepared["scenario"][
+            "adaptation_validation_bounds"
+        ]
         self.assertGreaterEqual(adaptation_bounds[0], 2000)
-        self.assertLessEqual(adaptation_bounds[1], 3400)
+        self.assertEqual(adaptation_bounds[1], adaptation_validation_bounds[0])
+        self.assertLessEqual(adaptation_validation_bounds[1], 3400)
+        self.assertGreater(len(prepared["adaptation_validation_x"]), 0)
         self.assertTrue(np.all(
             prepared["adaptation_starts"] < adaptation_bounds[1] - adaptation_bounds[0]
         ))

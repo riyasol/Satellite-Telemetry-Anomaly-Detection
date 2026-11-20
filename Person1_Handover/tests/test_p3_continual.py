@@ -21,6 +21,15 @@ class ConstantForecaster(nn.Module):
         return self.value.expand(inputs.shape[0], 1, inputs.shape[2])
 
 
+class InputMeanForecaster(nn.Module):
+    def __init__(self, scale):
+        super().__init__()
+        self.scale = nn.Parameter(torch.tensor(float(scale)))
+
+    def forward(self, inputs):
+        return self.scale * inputs.mean(dim=1, keepdim=True)
+
+
 class ReplayBufferTests(unittest.TestCase):
     def test_masked_samples_are_rejected_and_reservoir_is_bounded(self):
         buffer = ReplayBuffer(capacity=3, seed=7)
@@ -116,6 +125,36 @@ class ValidationGateTests(unittest.TestCase):
         self.assertFalse(rejected.accepted)
         self.assertEqual(gate.get_summary()["accepted_count"], 1)
         self.assertEqual(gate.get_summary()["rejected_count"], 1)
+
+    def test_gate_requires_improvement_on_disjoint_adaptation_validation(self):
+        retention_x = np.zeros((3, 2, 1), dtype=np.float32)
+        retention_y = np.zeros((3, 1, 1), dtype=np.float32)
+        adaptation_x = np.ones((3, 2, 1), dtype=np.float32)
+        adaptation_y = np.ones((3, 1, 1), dtype=np.float32)
+        gate = ValidationGate(
+            retention_x,
+            retention_y,
+            torch.device("cpu"),
+            adaptation_val_x=adaptation_x,
+            adaptation_val_y=adaptation_y,
+        )
+        current = InputMeanForecaster(0.0)
+
+        improved = gate.evaluate_candidate(
+            current,
+            InputMeanForecaster(1.0),
+            {"candidate_id": "adapted"},
+        )
+        unchanged = gate.evaluate_candidate(
+            current,
+            InputMeanForecaster(0.0),
+            {"candidate_id": "unchanged"},
+        )
+
+        self.assertTrue(improved.accepted)
+        self.assertEqual(improved.adaptation_loss_improvement, 1.0)
+        self.assertFalse(unchanged.accepted)
+        self.assertIn("did not improve", unchanged.rejection_reason)
 
     def test_gate_rejects_empty_or_nonfinite_validation_data(self):
         with self.assertRaisesRegex(ValueError, "non-zero"):
