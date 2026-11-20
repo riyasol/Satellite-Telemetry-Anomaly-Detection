@@ -161,3 +161,39 @@ P1 provides P2/P3 with:
 - validity
 - eligibility
 - mask reason
+
+## P2 Kaggle experiment handover
+
+Supply the existing Mission 1 processed split and B1 checkpoint as local Kaggle
+inputs. Do not upload private ESA credentials or commit the data/checkpoint:
+
+```text
+/kaggle/input/esa-mission1/esa_adb/mission1/splits.npz
+/kaggle/input/esa-mission1/models/mission1/lstm_b1.pt
+```
+
+The experiment expects repository-relative configuration paths. In Kaggle, copy
+the input assets into the repository paths or set equivalent configuration
+paths before execution:
+
+```bash
+git clone https://github.com/riyasol/Satellite-Telemetry-Anomaly-Detection.git
+cd Satellite-Telemetry-Anomaly-Detection
+git checkout feature/p2-drift-streaming
+cd Person1_Handover
+mkdir -p data/processed/esa_adb/mission1 results/models/mission1
+cp /kaggle/input/esa-mission1/esa_adb/mission1/splits.npz data/processed/esa_adb/mission1/splits.npz
+cp /kaggle/input/esa-mission1/models/mission1/lstm_b1.pt results/models/mission1/lstm_b1.pt
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -p "test*.py"
+python -m src.experiments.run_full_experiments
+```
+
+P2 writes the comparison CSV, detailed decision log, summary JSON, and
+comparison plots under `P2_results/`.
+The full benchmark does not retrain B1. B1 must be supplied; candidate model
+training may use CPU and is controlled by P3 interfaces.
+The default anomaly-mask dominance threshold is `0.75`, with at least 20 clean
+reference and recent residuals required. Treat these as provisional: inspect the
+validation/adaptation diagnostics and configure them explicitly before making
+claims about detector superiority.

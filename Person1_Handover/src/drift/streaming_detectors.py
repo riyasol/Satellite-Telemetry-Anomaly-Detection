@@ -23,33 +23,48 @@ class ADWIN:
         self.max_window = int(max_window)
         self.min_window = int(min_window)
         self.window: deque[float] = deque()
+        self.window_idx: deque[int] = deque()  # store global indices for each observation
         self.total_sum = 0.0
         self.total_count = 0
         self.drift_detected = False
         self.last_cut_point = 0
         self.history_detected = []
+        self.last_cut_window: tuple[float, ...] = ()
+        self.last_cut_window_idx: tuple[int, ...] = ()
 
     def reset(self):
         self.window.clear()
+        self.window_idx.clear()
         self.total_sum = 0.0
         self.total_count = 0
         self.drift_detected = False
         self.last_cut_point = 0
+        self.history_detected.clear()
+        self.last_cut_window = ()
+        self.last_cut_window_idx = ()
 
-    def update(self, val: float) -> bool:
+    def update(self, val: float, stream_index: Optional[int] = None) -> bool:
         """Add a new observation and check for drift. Returns True if drift detected."""
         val = float(val)
+        self.drift_detected = False
+        self.last_cut_point = 0
+
         if not math.isfinite(val):
             return False
 
+        # Each inserted value has exactly one retained-window index.
         self.window.append(val)
         self.total_sum += val
+        global_index = (
+            int(stream_index)
+            if stream_index is not None
+            else self.total_count
+        )
+        self.window_idx.append(global_index)
         self.total_count += 1
-        self.drift_detected = False
 
         if len(self.window) > self.max_window:
-            removed = self.window.popleft()
-            self.total_sum -= removed
+            self._prune_left(len(self.window) - self.max_window)
 
         n = len(self.window)
         if n < self.min_window * 2:
@@ -77,14 +92,27 @@ class ADWIN:
 
             if abs(mu0 - mu1) > epsilon_cut:
                 self.drift_detected = True
+                # i is a local position in the retained window before pruning.
                 self.last_cut_point = i
-                # Prune older sub-window
-                for _ in range(i):
-                    val_rem = self.window.popleft()
-                    self.total_sum -= val_rem
+                self.last_cut_window = tuple(elements)
+                self.last_cut_window_idx = tuple(list(self.window_idx))
+                self.history_detected.append({
+                    "global_index": global_index,
+                    "cut_point": i,
+                    "window_size_before_cut": n,
+                })
+                self._prune_left(i)
                 break
 
         return self.drift_detected
+
+    def _prune_left(self, count: int) -> None:
+        """Prune the same oldest observations from values and indices."""
+        count = min(int(count), len(self.window))
+        for _ in range(count):
+            removed = self.window.popleft()
+            self.window_idx.popleft()
+            self.total_sum -= removed
 
     def get_state(self) -> Dict[str, Any]:
         n = len(self.window)
