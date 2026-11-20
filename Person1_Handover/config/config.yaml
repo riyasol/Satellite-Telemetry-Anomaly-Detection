@@ -59,10 +59,11 @@ drift:
 continual:
   replay_capacity: 500
   replay_ratio: 0.3
+  strong_replay_ratio: 0.7
   finetune_epochs: 3
   finetune_lr: 0.0003
-  strong_epochs: 8
-  strong_lr: 0.001
+  strong_epochs: 3
+  strong_lr: 0.0003
   validation_tolerance: 0.02
   b2_periodic_interval: 1000
   adaptation_fraction_of_validation: 0.5

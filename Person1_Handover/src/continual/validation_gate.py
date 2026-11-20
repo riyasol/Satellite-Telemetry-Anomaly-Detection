@@ -232,10 +232,26 @@ class ValidationGate:
         return result
 
     def get_summary(self) -> Dict[str, Any]:
+        rejection_counts = {
+            "retention": 0,
+            "adaptation_validation": 0,
+            "other": 0,
+        }
+        for result in self.evaluation_history:
+            reason = result.rejection_reason
+            if reason is None:
+                continue
+            if reason.startswith("Candidate retention validation MSE"):
+                rejection_counts["retention"] += 1
+            elif reason.startswith("Candidate did not improve held-out adaptation"):
+                rejection_counts["adaptation_validation"] += 1
+            else:
+                rejection_counts["other"] += 1
         return {
             "total_candidates_evaluated": len(self.evaluation_history),
             "accepted_count": self.accepted_promotions_count,
             "rejected_count": self.rejected_count,
+            "rejection_counts": rejection_counts,
             "acceptance_rate": (
                 self.accepted_promotions_count / len(self.evaluation_history)
                 if self.evaluation_history else 0.0

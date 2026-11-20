@@ -87,6 +87,12 @@ def _result_row(
             result.get("sustained_elevation_windows", 0),
         "candidates_accepted": result.get("candidates_accepted", 0),
         "candidates_rejected": result.get("candidates_rejected", 0),
+        "candidate_retention_rejections":
+            result.get("candidate_retention_rejections", 0),
+        "candidate_adaptation_validation_rejections":
+            result.get("candidate_adaptation_validation_rejections", 0),
+        "candidate_other_rejections":
+            result.get("candidate_other_rejections", 0),
         "first_adaptation_delay_windows":
             result.get("first_adaptation_delay_windows"),
         "first_alarm_delay_windows": result.get("first_alarm_delay_windows"),

@@ -75,6 +75,8 @@ def main():
         summary_cols = [
             "scenario_name", "baseline", "f0.5_event", "precision", "recall",
             "fine_tune_updates", "strong_updates", "candidates_rejected",
+            "candidate_retention_rejections",
+            "candidate_adaptation_validation_rejections",
             "first_adaptation_delay_windows", "unnecessary_updates",
             "runtime_seconds", "runtime_training_seconds",
             "runtime_validation_seconds",
