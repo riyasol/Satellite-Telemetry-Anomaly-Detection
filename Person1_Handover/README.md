@@ -45,9 +45,13 @@ For each mission, under `data/processed/esa_adb/<mission-lowercase>/`:
 - `mission*_values.npy` and `mission*_timestamps.npy` (memmap source arrays)
 
 For each mission, under `results/models/<mission-lowercase>/`:
-- `lstm_b1.pt`
-- `scaler.json`
-- `training_history.csv`
+- the existing `lstm_b1.pt` remains available to `evaluate_b1`
+
+New training runs write `lstm_b1.pt`, `scaler.json`, and
+`training_history.csv` under
+`results/models/<mission-lowercase>/runs/<UTC-run-id>/`. Existing checkpoints
+are not replaced by default. Replacing the legacy checkpoint requires the
+explicit `python -m src.models.train --overwrite-checkpoint` option.
 
 For each mission, under `results/<mission-lowercase>/`:
 - `b1_metrics.json`

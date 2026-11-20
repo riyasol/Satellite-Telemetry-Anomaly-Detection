@@ -149,3 +149,40 @@ tolerance and matching rule.
 
 No tolerance should vary by scenario or mission without an explicit config
 entry and test.
+
+## Approval-gated ESA B1 event evaluation
+
+Run `python -m src.evaluation.esa_event_evaluation` for the static ESA B1
+baseline. It reads only the mission's `b1_scores.csv` and `b1_metrics.json`,
+and writes a separate JSON report per mission without overwriting an existing
+report. It does not replace the controlled-scenario benchmark metrics.
+
+The evaluator reports `pending` unless event-protocol approval, raw-source
+verification, and non-provisional tolerance and matching settings are all
+recorded in `evaluation.event_evaluation`. If that configuration section is
+absent, the evaluator defaults to pending; it does not treat the provisional
+two-window tolerance as approved.
+
+The proposed matching rule is maximum-cardinality one-to-one matching between
+contiguous scored-window events. This remains a proposal until guide/team
+approval. Do not copy synthetic scenario metrics into the ESA baseline report.
+
+## Decisions requiring guide/team approval
+
+1. Preprocessing margins before/after annotations, in seconds, separately by
+   mission if cadence differences warrant it.
+2. Streaming-mask margins and their units; these are distinct from
+   preprocessing margins.
+3. Event tolerance in scored-window units, including whether the current value
+   of two is retained.
+4. Event matching, including whether adjacent alarm windows form one event.
+5. The policy for undefined precision, recall, and F0.5 when there are no true
+   or predicted events.
+6. Whether candidate adaptation requires a separate chronological split. The
+   current contract uses validation for candidate acceptance and prohibits
+   test-driven updates; it does not require an additional split.
+7. Whether unlabelled observations may be interpreted as normal.
+
+Do not revise saved observations, labels, masks, split bounds, scalers, or
+checkpoints until any approved preprocessing-margin change is separately
+reviewed and versioned.
