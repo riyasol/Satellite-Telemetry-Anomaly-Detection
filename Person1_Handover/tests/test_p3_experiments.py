@@ -119,6 +119,7 @@ class BenchmarkProtocolTests(unittest.TestCase):
                 "validation_tolerance": 0.02,
                 "replay_capacity": 10,
                 "replay_ratio": 0.3,
+                "strong_replay_ratio": 0.7,
                 "finetune_epochs": 1,
                 "finetune_lr": 0.0003,
                 "strong_epochs": 1,
@@ -188,12 +189,14 @@ class BenchmarkProtocolTests(unittest.TestCase):
 
         class RejectingTrainer:
             attempts = 0
+            replay_ratios = []
 
             def __init__(self, *args, **kwargs):
                 pass
 
             def create_candidate(self, current_model, *args, **kwargs):
                 type(self).attempts += 1
+                type(self).replay_ratios.append(kwargs["replay_ratio"])
                 return current_model, {}, Path("unused.pt")
 
         def fixed_scores(model, x_arr, y_arr, device, batch_size):
@@ -222,6 +225,7 @@ class BenchmarkProtocolTests(unittest.TestCase):
             )
 
         self.assertEqual(RejectingTrainer.attempts, 3)
+        self.assertEqual(RejectingTrainer.replay_ratios, [0.7, 0.7, 0.7])
 
     def test_scenario_adapts_on_validation_and_evaluates_on_test(self):
         rng = np.random.default_rng(3)

@@ -859,7 +859,10 @@ def run_adaptive_simulation(
                 continual_cfg["strong_lr"]
                 if is_strong else continual_cfg["finetune_lr"]
             ),
-            replay_ratio=float(continual_cfg["replay_ratio"]),
+            replay_ratio=float(
+                continual_cfg.get("strong_replay_ratio", continual_cfg["replay_ratio"])
+                if is_strong else continual_cfg["replay_ratio"]
+            ),
             batch_size=int(model_cfg["batch_size"]),
         )
         training_seconds += time.perf_counter() - training_started
