@@ -130,6 +130,27 @@ class BenchmarkProtocolTests(unittest.TestCase):
         self.assertEqual(result["fn_events"], 1)
         self.assertEqual(result["evaluated_windows"], 4)
 
+    def test_one_predicted_alarm_cannot_match_multiple_true_events(self):
+        truth = np.array([0, 1, 0, 0, 1, 0], dtype=bool)
+        pred = np.ones(6, dtype=bool)
+
+        result = compute_event_metrics(truth, pred, tolerance_steps=0)
+
+        self.assertEqual(result["tp_events"], 1)
+        self.assertEqual(result["fn_events"], 1)
+        self.assertEqual(result["fp_events"], 0)
+        self.assertEqual(result["recall"], 0.5)
+
+    def test_duplicate_predicted_alarms_cannot_match_one_true_event_twice(self):
+        truth = np.array([0, 1, 0], dtype=bool)
+        pred = np.array([1, 0, 1], dtype=bool)
+
+        result = compute_event_metrics(truth, pred, tolerance_steps=1)
+
+        self.assertEqual(result["tp_events"], 1)
+        self.assertEqual(result["fn_events"], 0)
+        self.assertEqual(result["fp_events"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

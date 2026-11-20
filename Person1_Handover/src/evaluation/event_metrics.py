@@ -26,6 +26,62 @@ def extract_events(binary_sequence: np.ndarray) -> List[Tuple[int, int]]:
     return list(zip(starts.tolist(), ends.tolist()))
 
 
+def _maximum_event_matches(
+    true_events: List[Tuple[int, int]],
+    pred_events: List[Tuple[int, int]],
+    tolerance_steps: int,
+    sequence_length: int,
+) -> int:
+    """Match predicted and true events one-to-one, maximizing detected events."""
+    adjacency = []
+    for true_start, true_end in true_events:
+        expanded_start = max(0, true_start - tolerance_steps)
+        expanded_end = min(sequence_length, true_end + tolerance_steps)
+        adjacency.append([
+            pred_index
+            for pred_index, (pred_start, pred_end) in enumerate(pred_events)
+            if pred_end > expanded_start and pred_start < expanded_end
+        ])
+
+    true_match = [-1] * len(true_events)
+    pred_match = [-1] * len(pred_events)
+    match_count = 0
+    for root in range(len(true_events)):
+        queue = [root]
+        visited_true = {root}
+        visited_pred = set()
+        parent_pred = {}
+        free_pred = -1
+        cursor = 0
+        while cursor < len(queue) and free_pred < 0:
+            true_index = queue[cursor]
+            cursor += 1
+            for pred_index in adjacency[true_index]:
+                if pred_index in visited_pred:
+                    continue
+                visited_pred.add(pred_index)
+                parent_pred[pred_index] = true_index
+                matched_true = pred_match[pred_index]
+                if matched_true < 0:
+                    free_pred = pred_index
+                    break
+                if matched_true not in visited_true:
+                    visited_true.add(matched_true)
+                    queue.append(matched_true)
+
+        if free_pred >= 0:
+            pred_index = free_pred
+            while pred_index >= 0:
+                true_index = parent_pred[pred_index]
+                previous_pred = true_match[true_index]
+                true_match[true_index] = pred_index
+                pred_match[pred_index] = true_index
+                pred_index = previous_pred
+            match_count += 1
+
+    return match_count
+
+
 def compute_event_metrics(
     y_true_binary: np.ndarray,
     y_pred_binary: np.ndarray,
@@ -34,8 +90,8 @@ def compute_event_metrics(
 ) -> Dict[str, Any]:
     """Compute event-wise evaluation metrics.
 
-    An anomaly event is considered detected (True Positive) if any predicted alarm
-    falls within the event or within tolerance_steps of the event boundaries.
+    Events are matched one-to-one when their intervals overlap within the
+    configured tolerance.
     """
     y_true = np.asarray(y_true_binary, dtype=bool)
     y_pred = np.asarray(y_pred_binary, dtype=bool)
@@ -118,26 +174,11 @@ def compute_event_metrics(
             "false_alarm_rate": float(len(pred_events) / max(1, len(y_pred)))
         }
 
-    # Evaluate True Positives and False Negatives for true events
-    tp_events = 0
-    fn_events = 0
-    detected_pred_indices = set()
-
-    for s_true, e_true in true_events:
-        s_expanded = max(0, s_true - tolerance_steps)
-        e_expanded = min(len(y_pred), e_true + tolerance_steps)
-
-        # Check if any prediction overlaps
-        if np.any(y_pred[s_expanded:e_expanded]):
-            tp_events += 1
-            for p_idx, (sp, ep) in enumerate(pred_events):
-                if not (ep <= s_expanded or sp >= e_expanded):
-                    detected_pred_indices.add(p_idx)
-        else:
-            fn_events += 1
-
-    # False Positive events: predicted events that did not overlap any true event
-    fp_events = len(pred_events) - len(detected_pred_indices)
+    tp_events = _maximum_event_matches(
+        true_events, pred_events, tolerance_steps, len(y_pred)
+    )
+    fn_events = len(true_events) - tp_events
+    fp_events = len(pred_events) - tp_events
 
     precision = tp_events / (tp_events + fp_events) if (tp_events + fp_events) > 0 else 0.0
     recall = tp_events / (tp_events + fn_events) if (tp_events + fn_events) > 0 else 0.0
