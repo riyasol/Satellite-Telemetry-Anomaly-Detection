@@ -30,6 +30,7 @@ def compute_event_metrics(
     y_true_binary: np.ndarray,
     y_pred_binary: np.ndarray,
     tolerance_steps: int = 2,
+    valid_mask: np.ndarray = None,
 ) -> Dict[str, Any]:
     """Compute event-wise evaluation metrics.
 
@@ -38,6 +39,68 @@ def compute_event_metrics(
     """
     y_true = np.asarray(y_true_binary, dtype=bool)
     y_pred = np.asarray(y_pred_binary, dtype=bool)
+    if y_true.shape != y_pred.shape:
+        raise ValueError("True and predicted event sequences must have the same shape.")
+    if tolerance_steps < 0:
+        raise ValueError("tolerance_steps must be non-negative.")
+
+    if valid_mask is not None:
+        valid = np.asarray(valid_mask, dtype=bool)
+        if valid.shape != y_true.shape:
+            raise ValueError("valid_mask must match the event sequence shape.")
+        padded = np.r_[False, valid, False].astype(np.int8)
+        starts = np.flatnonzero(np.diff(padded) == 1)
+        ends = np.flatnonzero(np.diff(padded) == -1)
+        segments = [
+            compute_event_metrics(
+                y_true[start:end],
+                y_pred[start:end],
+                tolerance_steps=tolerance_steps,
+            )
+            for start, end in zip(starts, ends)
+        ]
+        tp = sum(segment["tp_events"] for segment in segments)
+        fp = sum(segment["fp_events"] for segment in segments)
+        fn = sum(segment["fn_events"] for segment in segments)
+        true_count = sum(segment["total_true_events"] for segment in segments)
+        pred_count = sum(
+            len(extract_events(y_pred[start:end]))
+            for start, end in zip(starts, ends)
+        )
+        if true_count == 0 and pred_count == 0:
+            return {
+                "tp_events": 0,
+                "fp_events": 0,
+                "fn_events": 0,
+                "total_true_events": 0,
+                "total_pred_events": 0,
+                "precision": 1.0,
+                "recall": 1.0,
+                "f0.5_event": 1.0,
+                "false_alarm_rate": 0.0,
+                "evaluated_windows": int(valid.sum()),
+                "excluded_windows": int((~valid).sum()),
+            }
+        precision = tp / (tp + fp) if tp + fp else (1.0 if not true_count else 0.0)
+        recall = tp / (tp + fn) if tp + fn else (1.0 if not pred_count else 0.0)
+        beta2 = 0.25
+        f05 = (
+            (1.0 + beta2) * precision * recall / (beta2 * precision + recall)
+            if precision + recall else 0.0
+        )
+        return {
+            "tp_events": tp,
+            "fp_events": fp,
+            "fn_events": fn,
+            "total_true_events": true_count,
+            "total_pred_events": pred_count,
+            "precision": float(precision),
+            "recall": float(recall),
+            "f0.5_event": float(f05),
+            "false_alarm_rate": float(fp / max(1, int(valid.sum()))),
+            "evaluated_windows": int(valid.sum()),
+            "excluded_windows": int((~valid).sum()),
+        }
 
     true_events = extract_events(y_true)
     pred_events = extract_events(y_pred)

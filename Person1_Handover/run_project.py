@@ -3,11 +3,12 @@
 Executes:
 1. Syntax and module compilation check
 2. Person 2 unit & synthetic drift tests
-3. Baseline B1 evaluation
-4. Full B1-B4 benchmark across all 5 controlled drift scenarios
-5. Ablation study & masking comparison
-6. Multi-panel diagnostic timeline plot generation
-7. Result summary table output
+3. P3 replay, validation-gate, and experiment tests
+4. Baseline B1 evaluation
+5. Full B1-B4 benchmark across all 5 controlled drift scenarios
+6. Ablation study & masking comparison
+7. Multi-panel diagnostic timeline plot generation
+8. Result summary table output
 """
 import sys
 import subprocess
@@ -42,14 +43,23 @@ def main():
     # Step 2: Run Person 2 unit & synthetic tests
     run_step(2, "Person 2 Drift & Decision Unit Tests", ["-m", "src.drift.synthetic_drift_tests"])
 
-    # Step 3: Run Baseline B1 Evaluation
-    run_step(3, "Baseline B1 Static Forecaster Evaluation", ["-m", "src.models.evaluate_b1"])
+    # Step 3: Verify P3-owned continual-learning and experiment components
+    run_step(3, "P3 Continual-Learning & Experiment Tests", [
+        "-m", "unittest", "discover", "-s", "tests", "-p", "test_p3_*.py", "-v"
+    ])
 
-    # Step 4: Run Master Experimental Evaluation (B1-B4 across 5 Scenarios + Ablation Study)
-    run_step(4, "Full B1-B4 Benchmark & Ablation Study", ["-m", "src.experiments.run_full_experiments"])
+    # Step 4: Run Baseline B1 Evaluation
+    run_step(4, "Baseline B1 Static Forecaster Evaluation", ["-m", "src.models.evaluate_b1"])
 
-    # Step 5: Generate Comprehensive Diagnostic Timeline Plot
-    run_step(5, "Generate Diagnostic Timeline Plot", ["-m", "src.experiments.plot_drift_timeline"])
+    # Step 5: Run B1-B4 across 5 scenarios and P3 component ablations
+    run_step(5, "Full B1-B4 Benchmark & Ablation Study", [
+        "-m", "src.experiments.run_full_experiments"
+    ])
+
+    # Step 6: Generate the controlled-stream diagnostic timeline
+    run_step(6, "Generate Diagnostic Timeline Plot", [
+        "-m", "src.experiments.plot_drift_timeline"
+    ])
 
     total_time = time.perf_counter() - total_start
 
@@ -62,7 +72,13 @@ def main():
     if comp_csv.exists():
         df_comp = pd.read_csv(comp_csv)
         print("\n--- B1-B4 COMPARATIVE BENCHMARK ACROSS 5 SCENARIOS ---")
-        summary_cols = ["scenario_name", "baseline", "f0.5_event", "precision", "recall", "total_updates", "unnecessary_updates", "runtime_seconds"]
+        summary_cols = [
+            "scenario_name", "baseline", "f0.5_event", "precision", "recall",
+            "fine_tune_updates", "strong_updates", "candidates_rejected",
+            "first_adaptation_delay_windows", "unnecessary_updates",
+            "runtime_seconds", "runtime_training_seconds",
+            "runtime_validation_seconds",
+        ]
         print(df_comp[summary_cols].to_string(index=False))
 
     abl_csv = root / "results" / "mission1" / "ablation_study_results.csv"

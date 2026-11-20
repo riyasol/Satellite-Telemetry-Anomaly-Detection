@@ -6,9 +6,10 @@ with historical replay samples.
 """
 from __future__ import annotations
 import copy
+import re
 import time
 from pathlib import Path
-from typing import Dict, Any, Tuple, Optional, List
+from typing import Dict, Any, Tuple, Optional
 import numpy as np
 import torch
 import torch.nn as nn
@@ -27,12 +28,21 @@ class CandidateTrainer:
         device: torch.device,
         replay_buffer: ReplayBuffer,
         checkpoints_dir: Path,
+        candidate_namespace: str = "m1",
     ):
         self.device = device
         self.replay_buffer = replay_buffer
         self.checkpoints_dir = Path(checkpoints_dir)
         self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
-        self.candidate_count = 0
+        self.candidate_namespace = re.sub(
+            r"[^A-Za-z0-9_-]+", "_", candidate_namespace
+        ).strip("_-") or "candidate"
+        self.candidate_count = sum(
+            1
+            for path in self.checkpoints_dir.glob(
+                f"{self.candidate_namespace}_*_*.pt"
+            )
+        )
 
     def create_candidate(
         self,
@@ -46,8 +56,36 @@ class CandidateTrainer:
         batch_size: int = 64,
     ) -> Tuple[LSTMForecaster, Dict[str, Any], Path]:
         """Train a candidate model using recent eligible telemetry + SER replay buffer."""
+        action_type = action_type.upper()
+        if action_type not in {"FINE_TUNE", "STRONG_UPDATE"}:
+            raise ValueError(f"Unsupported candidate action: {action_type}")
+        if epochs is not None and int(epochs) <= 0:
+            raise ValueError("epochs must be positive.")
+        if lr is not None and (not np.isfinite(lr) or float(lr) <= 0):
+            raise ValueError("lr must be finite and positive.")
+        if not np.isfinite(replay_ratio) or not 0.0 <= float(replay_ratio) < 1.0:
+            raise ValueError("replay_ratio must be in [0, 1).")
+        if batch_size <= 0:
+            raise ValueError("batch_size must be positive.")
+
+        recent_x = np.asarray(recent_x, dtype=np.float32)
+        recent_y = np.asarray(recent_y, dtype=np.float32)
+        if recent_x.ndim != 3 or recent_y.ndim != 3:
+            raise ValueError("Candidate inputs and targets must be 3-D window arrays.")
+        if len(recent_x) == 0 or len(recent_x) != len(recent_y):
+            raise ValueError("Candidate inputs and targets must have equal, non-zero lengths.")
+        if recent_x.shape[2] != current_model.input_size:
+            raise ValueError("Candidate feature count does not match the current model.")
+        if recent_y.shape[1:] != (current_model.horizon, current_model.input_size):
+            raise ValueError("Candidate target shape does not match the current model.")
+        if not np.isfinite(recent_x).all() or not np.isfinite(recent_y).all():
+            raise ValueError("Candidate training data must contain only finite values.")
+
         self.candidate_count += 1
-        candidate_id = f"cand_m1_{self.candidate_count:03d}_{action_type.lower()}"
+        candidate_id = (
+            f"{self.candidate_namespace}_{self.candidate_count:03d}_"
+            f"{action_type.lower()}"
+        )
         start_time = time.perf_counter()
 
         # Clone current model weights as the starting point
@@ -56,16 +94,16 @@ class CandidateTrainer:
 
         # Update hyperparameters based on update strength
         if action_type == "STRONG_UPDATE":
-            num_epochs = epochs or 6
-            learning_rate = lr or 0.001
+            num_epochs = int(epochs) if epochs is not None else 6
+            learning_rate = float(lr) if lr is not None else 0.001
             eff_replay_ratio = max(0.4, replay_ratio)
-        else: # FINE_TUNE
-            num_epochs = epochs or 3
-            learning_rate = lr or 0.0003
+        else:
+            num_epochs = int(epochs) if epochs is not None else 3
+            learning_rate = float(lr) if lr is not None else 0.0003
             eff_replay_ratio = replay_ratio
 
-        recent_t_x = torch.from_numpy(recent_x).float()
-        recent_t_y = torch.from_numpy(recent_y).float()
+        recent_t_x = torch.from_numpy(recent_x)
+        recent_t_y = torch.from_numpy(recent_y)
         n_recent = len(recent_t_x)
 
         # Mix with replay buffer (SER)

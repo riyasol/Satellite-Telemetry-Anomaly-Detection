@@ -44,6 +44,21 @@ class ValidationGate:
         tolerance: float = 0.02, # Candidate loss must not exceed current loss * (1 + tolerance)
         batch_size: int = 128,
     ):
+        val_x = np.asarray(val_x, dtype=np.float32)
+        val_y = np.asarray(val_y, dtype=np.float32)
+        if val_x.ndim != 3 or val_y.ndim != 3:
+            raise ValueError("Validation inputs and targets must be 3-D window arrays.")
+        if len(val_x) == 0 or len(val_x) != len(val_y):
+            raise ValueError("Validation inputs and targets must have equal, non-zero lengths.")
+        if val_x.shape[2] != val_y.shape[2]:
+            raise ValueError("Validation inputs and targets must have the same feature count.")
+        if not np.isfinite(val_x).all() or not np.isfinite(val_y).all():
+            raise ValueError("Validation data must contain only finite values.")
+        if not np.isfinite(tolerance) or float(tolerance) < 0:
+            raise ValueError("tolerance must be finite and non-negative.")
+        if batch_size <= 0:
+            raise ValueError("batch_size must be positive.")
+
         self.val_x = val_x
         self.val_y = val_y
         self.device = device
@@ -91,8 +106,11 @@ class ValidationGate:
         loss_improvement = current_loss - candidate_loss
         max_allowable_loss = current_loss * (1.0 + self.tolerance)
 
-        # Candidate is accepted if its loss is <= max_allowable_loss
-        if candidate_loss <= max_allowable_loss:
+        if not np.isfinite(current_loss):
+            raise RuntimeError("Current model produced a non-finite validation loss.")
+
+        # Candidate is accepted only when its loss is finite and within tolerance.
+        if np.isfinite(candidate_loss) and candidate_loss <= max_allowable_loss:
             accepted = True
             rejection_reason = None
             self.accepted_promotions_count += 1

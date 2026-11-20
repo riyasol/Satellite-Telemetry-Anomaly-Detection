@@ -1,35 +1,30 @@
-"""Comprehensive simulation benchmark comparing B1, B2, B3, and B4 across all 5 drift scenarios on Mission 1.
-
-Baselines:
-- B1: Static LSTM baseline (no adaptation).
-- B2: Kuhn Continual Learning: Replay/SER continual learning + validation gate, periodic updates.
-- B3: Drift-Triggered Adaptation: Drift detection triggers update + validation gate without decision layer.
-- B4: Proposed Drift-Aware System: Anomaly masking + Severity + Persistence + Degradation -> 3-way decision -> SER update + Validation Gate.
-"""
+"""Reproducible B1-B4 evaluation with a separate adaptation and held-out test stream."""
 from __future__ import annotations
+
 import copy
+import math
+import random
 import time
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Any, Dict, Optional, Tuple
+
 import numpy as np
-import pandas as pd
 import torch
 
-from src.utils.config import load_config, resolve_path
-from src.models.anomaly_scoring import load_forecaster, ema_reset_on_excluded, window_has_anomaly
-from src.models.lstm_forecaster import LSTMForecaster
-from src.drift.streaming_detectors import ADWIN
-from src.drift.distribution_measures import compute_all_distribution_measures
-from src.drift.anomaly_masker import AnomalyMasker
-from src.drift.severity import SeverityCalculator
-from src.drift.persistence import PersistenceTracker
-from src.drift.degradation import DegradationTracker
-from src.drift.decision_engine import DecisionEngine, AdaptationAction
-from src.continual.replay_buffer import ReplayBuffer
 from src.continual.candidate_trainer import CandidateTrainer
+from src.continual.replay_buffer import ReplayBuffer
 from src.continual.validation_gate import ValidationGate
-from src.scenarios.drift_generator import generate_scenario, DriftScenarioConfig
-from src.evaluation.event_metrics import compute_event_metrics, compute_point_metrics
+from src.drift.decision_engine import AdaptationAction, DecisionEngine
+from src.drift.degradation import DegradationTracker
+from src.drift.distribution_measures import compute_all_distribution_measures
+from src.drift.persistence import PersistenceTracker
+from src.drift.severity import SeverityCalculator
+from src.drift.streaming_detectors import ADWIN
+from src.evaluation.event_metrics import compute_event_metrics
+from src.models.anomaly_scoring import ema_reset_on_excluded, window_has_anomaly
+from src.models.lstm_forecaster import LSTMForecaster
+from src.scenarios.drift_generator import generate_scenario, inject_anomaly_pulses
+from src.utils.config import resolve_path
 
 
 def prepare_fast_windows(
@@ -39,22 +34,25 @@ def prepare_fast_windows(
     forecast_horizon: int = 10,
     stride: int = 10,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Extract (x, y) arrays and start indices efficiently."""
+    """Extract input/target arrays and their input-start indices."""
     start_bound, end_bound = bounds
-    max_start = end_bound - input_window - forecast_horizon
-    starts = np.arange(start_bound, max_start + 1, stride, dtype=int)
-    n_windows = len(starts)
-    n_channels = values.shape[1]
+    if input_window <= 0 or forecast_horizon <= 0 or stride <= 0:
+        raise ValueError("Window sizes and stride must be positive.")
+    if start_bound < 0 or end_bound > len(values) or start_bound >= end_bound:
+        raise ValueError("Invalid split bounds.")
 
-    x_arr = np.zeros((n_windows, input_window, n_channels), dtype=np.float32)
-    y_arr = np.zeros((n_windows, forecast_horizon, n_channels), dtype=np.float32)
+    last_start = end_bound - input_window - forecast_horizon
+    starts = np.arange(start_bound, last_start + 1, stride, dtype=np.int64)
+    if not len(starts):
+        raise ValueError("Split is too short for configured input and horizon.")
 
-    for i, s in enumerate(starts):
-        xe = s + input_window
-        ye = xe + forecast_horizon
-        x_arr[i] = values[s:xe]
-        y_arr[i] = values[xe:ye]
-
+    channels = values.shape[1]
+    x_arr = np.empty((len(starts), input_window, channels), dtype=np.float32)
+    y_arr = np.empty((len(starts), forecast_horizon, channels), dtype=np.float32)
+    for row, start in enumerate(starts):
+        split = int(start) + input_window
+        x_arr[row] = values[start:split]
+        y_arr[row] = values[split:split + forecast_horizon]
     return starts, x_arr, y_arr
 
 
@@ -65,22 +63,660 @@ def score_model_on_windows(
     device: torch.device,
     batch_size: int = 128,
 ) -> Tuple[np.ndarray, float]:
-    """Score model in fast batched mode and return MSE scores per window and inference time."""
+    """Score forecast windows with MSE and return inference time."""
+    if len(x_arr) != len(y_arr):
+        raise ValueError("Input and target window counts do not match.")
+    if batch_size <= 0:
+        raise ValueError("batch_size must be positive.")
+
     model.eval()
-    t0 = time.perf_counter()
-    n = len(x_arr)
-    raw_mse = np.zeros(n, dtype=np.float32)
-
+    start_time = time.perf_counter()
+    scores = np.empty(len(x_arr), dtype=np.float32)
     with torch.no_grad():
-        for b in range(0, n, batch_size):
-            bx = torch.from_numpy(x_arr[b : b + batch_size]).to(device)
-            by = torch.from_numpy(y_arr[b : b + batch_size]).to(device)
-            pred = model(bx)
-            diff = pred - by
-            mse = torch.mean(diff ** 2, dim=(1, 2)).cpu().numpy()
-            raw_mse[b : b + batch_size] = mse
+        for batch_start in range(0, len(x_arr), batch_size):
+            batch_end = batch_start + batch_size
+            x = torch.from_numpy(x_arr[batch_start:batch_end]).to(device)
+            y = torch.from_numpy(y_arr[batch_start:batch_end]).to(device)
+            prediction = model(x)
+            scores[batch_start:batch_end] = torch.mean(
+                (prediction - y) ** 2, dim=(1, 2)
+            ).cpu().numpy()
+    return scores, time.perf_counter() - start_time
 
-    return raw_mse, time.perf_counter() - t0
+
+def _longest_clean_interval(
+    exclusion_mask: np.ndarray,
+    start: int,
+    end: int,
+    min_length: int,
+) -> Tuple[int, int]:
+    clean = ~np.asarray(exclusion_mask[start:end], dtype=bool)
+    padded = np.r_[False, clean, False].astype(np.int8)
+    run_starts = np.flatnonzero(np.diff(padded) == 1)
+    run_ends = np.flatnonzero(np.diff(padded) == -1)
+    runs = [
+        (start + int(left), start + int(right))
+        for left, right in zip(run_starts, run_ends)
+    ]
+    if not runs:
+        raise ValueError("No clean validation interval is available for adaptation.")
+    result = max(runs, key=lambda run: run[1] - run[0])
+    if result[1] - result[0] < min_length:
+        raise ValueError(
+            "The clean validation interval is too short for the configured "
+            "adaptation stream and periodic baseline."
+        )
+    return result
+
+
+def prepare_scenario_data(
+    scenario_id: int,
+    cfg: Dict[str, Any],
+    clean_splits: Dict[str, Any],
+    base_model: LSTMForecaster,
+    device: torch.device,
+    inject_anomalies: bool = False,
+) -> Dict[str, Any]:
+    """Build disjoint calibration, adaptation, and held-out evaluation data.
+
+    Ground-truth annotations are used only to select clean calibration/adaptation
+    windows and to compute final offline metrics. They are not passed to the
+    streaming adaptation loop.
+    """
+    model_cfg = cfg["model"]
+    anomaly_cfg = cfg["anomaly"]
+    continual_cfg = cfg["continual"]
+    experiment_cfg = cfg.get("experiments", {})
+    values = np.asarray(clean_splits["values"], dtype=np.float32)
+    labels = np.asarray(clean_splits["labels"], dtype=np.uint8)
+    exclusion = np.asarray(clean_splits["exclusion_mask"], dtype=bool)
+    timestamps = np.asarray(clean_splits["timestamps_ns"], dtype=np.int64)
+    input_window = int(model_cfg["input_window"])
+    horizon = int(model_cfg["forecast_horizon"])
+    stride = int(model_cfg.get("window_stride", 1))
+    batch_size = int(model_cfg["batch_size"])
+
+    val_start, val_end = map(int, clean_splits["validation_bounds"])
+    test_start, test_end = map(int, clean_splits["test_bounds"])
+    adaptation_fraction = float(
+        continual_cfg.get("adaptation_fraction_of_validation", 0.5)
+    )
+    if not 0.0 < adaptation_fraction < 1.0:
+        raise ValueError("adaptation_fraction_of_validation must be in (0, 1).")
+    calibration_end = val_start + int(
+        (val_end - val_start) * (1.0 - adaptation_fraction)
+    )
+    if calibration_end <= val_start or calibration_end >= val_end:
+        raise ValueError("Validation split is too short to partition.")
+
+    gate_starts, gate_x, gate_y = prepare_fast_windows(
+        values,
+        (val_start, calibration_end),
+        input_window,
+        horizon,
+        stride,
+    )
+    gate_excluded = window_has_anomaly(
+        exclusion, gate_starts, input_window, horizon, include_input=True
+    )
+    gate_scores, _ = score_model_on_windows(
+        base_model, gate_x, gate_y, device, batch_size
+    )
+    gate_ema = ema_reset_on_excluded(
+        gate_scores, ~gate_excluded, float(anomaly_cfg["ema_alpha"])
+    )
+    normal_ema_scores = gate_ema[np.isfinite(gate_ema)]
+    normal_raw_scores = gate_scores[(~gate_excluded) & np.isfinite(gate_scores)]
+    valid_gate_windows = (~gate_excluded) & np.isfinite(gate_scores)
+    if not len(normal_ema_scores) or not valid_gate_windows.any():
+        raise ValueError("No eligible normal calibration/validation windows remain.")
+    threshold = float(
+        np.quantile(normal_ema_scores, float(anomaly_cfg["threshold_quantile"]))
+    )
+    gate_x = gate_x[valid_gate_windows]
+    gate_y = gate_y[valid_gate_windows]
+
+    drift_cfg = cfg["drift"]
+    min_rows_for_stream = (
+        input_window
+        + horizon
+        + max(
+            int(experiment_cfg.get("minimum_adaptation_windows", 40)),
+            int(continual_cfg.get("b2_periodic_interval", 1000)),
+        ) * stride
+    )
+    adaptation_bounds = _longest_clean_interval(
+        exclusion, calibration_end, val_end, min_rows_for_stream
+    )
+    adaptation_clean = values[adaptation_bounds[0]:adaptation_bounds[1]].copy()
+    scenario_parameters = experiment_cfg.get("scenarios", {}).get(
+        str(scenario_id), {}
+    )
+    adaptation_values, scenario = generate_scenario(
+        adaptation_clean,
+        scenario_id,
+        seed=int(cfg.get("seed", 42)),
+        scenario_parameters=scenario_parameters,
+    )
+    adaptation_anomaly_points = np.zeros(len(adaptation_values), dtype=np.uint8)
+    if inject_anomalies and scenario.start_step >= 0:
+        pulse_cfg = experiment_cfg.get("masking_ablation", {})
+        adaptation_values, adaptation_anomaly_points = inject_anomaly_pulses(
+            adaptation_values,
+            drift_start_step=scenario.start_step,
+            stride=stride,
+            channels=pulse_cfg.get("anomaly_channels"),
+            magnitude=float(pulse_cfg.get("anomaly_magnitude", 8.0)),
+            pulse_length=int(pulse_cfg.get("anomaly_pulse_length", 3)),
+            offsets_in_strides=pulse_cfg.get("anomaly_offsets_in_strides"),
+        )
+    adaptation_starts, adaptation_x, adaptation_y = prepare_fast_windows(
+        adaptation_values,
+        (0, len(adaptation_values)),
+        input_window,
+        horizon,
+        stride,
+    )
+
+    test_clean = values[test_start:test_end].copy()
+    evaluation_segment, _ = generate_scenario(
+        test_clean,
+        scenario_id,
+        seed=int(cfg.get("seed", 42)),
+        scenario_parameters=scenario_parameters,
+    )
+    evaluation_anomaly_points = np.zeros(len(evaluation_segment), dtype=np.uint8)
+    if inject_anomalies and scenario.start_step >= 0:
+        pulse_cfg = experiment_cfg.get("masking_ablation", {})
+        evaluation_segment, evaluation_anomaly_points = inject_anomaly_pulses(
+            evaluation_segment,
+            drift_start_step=scenario.start_step,
+            stride=stride,
+            channels=pulse_cfg.get("anomaly_channels"),
+            magnitude=float(pulse_cfg.get("anomaly_magnitude", 8.0)),
+            pulse_length=int(pulse_cfg.get("anomaly_pulse_length", 3)),
+            offsets_in_strides=pulse_cfg.get("anomaly_offsets_in_strides"),
+        )
+    evaluation_values = values.copy()
+    evaluation_values[test_start:test_end] = evaluation_segment
+    evaluation_starts, evaluation_x, evaluation_y = prepare_fast_windows(
+        evaluation_values,
+        (test_start, test_end),
+        input_window,
+        horizon,
+        stride,
+    )
+    evaluation_labels = labels.copy()
+    evaluation_labels[test_start:test_end] = np.maximum(
+        evaluation_labels[test_start:test_end], evaluation_anomaly_points
+    )
+    evaluation_true = window_has_anomaly(
+        evaluation_labels,
+        evaluation_starts,
+        input_window,
+        horizon,
+        include_input=False,
+    )
+    ignore_mask = np.asarray(
+        clean_splits.get("evaluation_ignore_mask", np.zeros(len(values))),
+        dtype=bool,
+    )
+    evaluation_valid = ~window_has_anomaly(
+        ignore_mask,
+        evaluation_starts,
+        input_window,
+        horizon,
+        include_input=False,
+    )
+
+    gaps_seconds = np.diff(timestamps[adaptation_bounds[0]:adaptation_bounds[1]]) / 1e9
+    nominal_gap = float(np.median(gaps_seconds)) if len(gaps_seconds) else 30.0
+    window_seconds = max(nominal_gap * stride, 1.0)
+    pre_margin_windows = int(
+        math.ceil(float(drift_cfg.get("pre_anomaly_margin_seconds", 0)) / window_seconds)
+    )
+    post_margin_windows = int(
+        math.ceil(float(drift_cfg.get("post_anomaly_margin_seconds", 0)) / window_seconds)
+    )
+    drift_start_window = (
+        int(np.searchsorted(adaptation_starts, scenario.start_step, side="left"))
+        if scenario.start_step >= 0
+        else None
+    )
+
+    scenario_dict = scenario.to_dict()
+    scenario_dict.update({
+        "adaptation_bounds": [int(adaptation_bounds[0]), int(adaptation_bounds[1])],
+        "calibration_bounds": [int(val_start), int(calibration_end)],
+        "evaluation_bounds": [int(test_start), int(test_end)],
+        "adaptation_drift_start_window": drift_start_window,
+        "adaptation_anomaly_points": int(adaptation_anomaly_points.sum()),
+        "evaluation_anomaly_points": int(evaluation_anomaly_points.sum()),
+        "scenario_parameters": scenario_parameters,
+        "masking_ablation_parameters": (
+            experiment_cfg.get("masking_ablation", {}) if inject_anomalies else {}
+        ),
+    })
+    return {
+        "scenario": scenario_dict,
+        "scenario_config": scenario,
+        "threshold": threshold,
+        "normal_validation_ema_scores": normal_ema_scores,
+        "normal_validation_raw_scores": normal_raw_scores,
+        "gate_x": gate_x,
+        "gate_y": gate_y,
+        "adaptation_starts": adaptation_starts,
+        "adaptation_x": adaptation_x,
+        "adaptation_y": adaptation_y,
+        "adaptation_drift_start_window": drift_start_window,
+        "evaluation_x": evaluation_x,
+        "evaluation_y": evaluation_y,
+        "evaluation_starts": evaluation_starts,
+        "evaluation_true": evaluation_true,
+        "evaluation_valid": evaluation_valid,
+        "pre_margin_windows": pre_margin_windows,
+        "post_margin_windows": post_margin_windows,
+        "adaptation_anomaly_points": adaptation_anomaly_points,
+        "evaluation_anomaly_points": evaluation_anomaly_points,
+    }
+
+
+def _evaluate_frozen_model(
+    model: LSTMForecaster,
+    scenario_data: Dict[str, Any],
+    cfg: Dict[str, Any],
+    device: torch.device,
+) -> Tuple[Dict[str, Any], np.ndarray, float]:
+    scores, inference_seconds = score_model_on_windows(
+        model,
+        scenario_data["evaluation_x"],
+        scenario_data["evaluation_y"],
+        device,
+        int(cfg["model"]["batch_size"]),
+    )
+    ema = ema_reset_on_excluded(
+        scores,
+        np.ones(len(scores), dtype=bool),
+        float(cfg["anomaly"]["ema_alpha"]),
+    )
+    predictions = (ema > scenario_data["threshold"]) & np.isfinite(ema)
+    metrics = compute_event_metrics(
+        scenario_data["evaluation_true"],
+        predictions,
+        tolerance_steps=int(cfg.get("evaluation", {}).get("event_tolerance_steps", 2)),
+        valid_mask=scenario_data["evaluation_valid"],
+    )
+    return metrics, predictions, inference_seconds
+
+
+def run_adaptive_simulation(
+    baseline_name: str,
+    scenario_id: int,
+    scenario_data: Dict[str, Any],
+    cfg: Dict[str, Any],
+    device: torch.device,
+    base_model: LSTMForecaster,
+    replay_seed_buffer: ReplayBuffer,
+    ablation_variant: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Adapt on the validation stream, then evaluate once on the frozen test stream."""
+    simulation_started = time.perf_counter()
+    if baseline_name not in {"B2", "B3", "B4"}:
+        raise ValueError(f"Unsupported adaptive baseline: {baseline_name}")
+    seed = int(cfg.get("seed", 42))
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+    model_cfg = cfg["model"]
+    anomaly_cfg = cfg["anomaly"]
+    drift_cfg = cfg["drift"]
+    continual_cfg = cfg["continual"]
+    experiment_cfg = cfg.get("experiments", {})
+    minimum_candidate_windows = int(
+        experiment_cfg.get("minimum_candidate_windows", 30)
+    )
+    periodic_minimum_windows = int(
+        experiment_cfg.get("periodic_minimum_candidate_windows", 50)
+    )
+    minimum_distribution_samples = int(
+        experiment_cfg.get("minimum_distribution_samples", 20)
+    )
+    current_model = copy.deepcopy(base_model).to(device)
+    validation_gate = ValidationGate(
+        scenario_data["gate_x"],
+        scenario_data["gate_y"],
+        device,
+        tolerance=float(continual_cfg["validation_tolerance"]),
+        batch_size=int(model_cfg["batch_size"]),
+    )
+    replay = copy.deepcopy(replay_seed_buffer)
+    namespace = (
+        f"mission1_s{scenario_id}_{baseline_name.lower()}"
+        if ablation_variant is None
+        else f"mission1_s{scenario_id}_{baseline_name.lower()}_{ablation_variant.lower()}"
+    )
+    trainer = CandidateTrainer(
+        current_model,
+        device,
+        replay,
+        resolve_path(cfg["output"]["model_dir"]) / "candidates",
+        candidate_namespace=namespace,
+    )
+
+    detector = ADWIN(delta=float(drift_cfg["adwin_delta"]))
+    persistence = PersistenceTracker(
+        window_k=int(drift_cfg["persistence_window_k"]),
+        min_detections=int(drift_cfg["persistence_min"]),
+    )
+    severity_calculator = SeverityCalculator(
+        weights=drift_cfg["severity_weights"]
+    )
+    severity_calculator.calibrate_from_normal_validation(
+        scenario_data["normal_validation_raw_scores"]
+    )
+    reference_residuals = list(
+        scenario_data["normal_validation_raw_scores"][
+            :int(drift_cfg["reference_window_size"])
+        ]
+    )
+    if not reference_residuals:
+        raise ValueError("No normal validation residuals available for drift reference.")
+    degradation = DegradationTracker(
+        degradation_threshold_delta_q=float(
+            drift_cfg["degradation_threshold_delta_q"]
+        ),
+        reference_mse=max(
+            1e-8,
+            float(np.mean(np.square(scenario_data["normal_validation_raw_scores"]))),
+        ),
+    )
+    engine = DecisionEngine(
+        theta_low=float(drift_cfg["theta_low"]),
+        theta_high=float(drift_cfg["theta_high"]),
+        persistence_min=int(drift_cfg["persistence_min"]),
+        degradation_threshold=float(drift_cfg["degradation_threshold_delta_q"]),
+    )
+
+    use_masking = ablation_variant != "No_Anomaly_Masking"
+    use_severity = ablation_variant != "No_Severity"
+    use_persistence = ablation_variant != "No_Persistence"
+    use_degradation = ablation_variant != "No_Degradation"
+    adaptation_x = scenario_data["adaptation_x"]
+    adaptation_y = scenario_data["adaptation_y"]
+    cached_scores, adaptation_inference_seconds = score_model_on_windows(
+        current_model,
+        adaptation_x,
+        adaptation_y,
+        device,
+        int(model_cfg["batch_size"]),
+    )
+
+    recent_entries = []
+    recent_residuals = []
+    ema_state = None
+    blocked_until = -1
+    update_counts = {"FINE_TUNE": 0, "STRONG_UPDATE": 0}
+    request_count = 0
+    drift_alarm_steps = []
+    mask_steps = []
+    first_decision_step = None
+    first_alarm_after_drift = None
+    training_seconds = 0.0
+    validation_seconds = 0.0
+    detection_seconds = 0.0
+    decision_seconds = 0.0
+    trace = {
+        "raw_mse": cached_scores.copy(),
+        "predicted_anomaly": np.zeros(len(cached_scores), dtype=np.uint8),
+        "masked": np.zeros(len(cached_scores), dtype=np.uint8),
+        "drift_alarm": np.zeros(len(cached_scores), dtype=np.uint8),
+        "severity": np.zeros(len(cached_scores), dtype=np.float32),
+        "action": np.full(len(cached_scores), "NO_UPDATE", dtype=object),
+    }
+    drift_start_window = scenario_data["adaptation_drift_start_window"]
+
+    if ablation_variant == "No_Anomaly_Masking":
+        pre_margin = post_margin = 0
+    else:
+        pre_margin = int(scenario_data["pre_margin_windows"])
+        post_margin = int(scenario_data["post_margin_windows"])
+
+    for step in range(len(adaptation_x)):
+        score = float(cached_scores[step])
+        if use_masking and step <= blocked_until:
+            ema_state = None
+            trace["masked"][step] = 1
+            mask_steps.append(step)
+            continue
+
+        alpha = float(anomaly_cfg["ema_alpha"])
+        ema_state = score if ema_state is None else alpha * score + (1.0 - alpha) * ema_state
+        is_predicted_anomaly = bool(ema_state > scenario_data["threshold"])
+        trace["predicted_anomaly"][step] = int(is_predicted_anomaly)
+
+        if use_masking and is_predicted_anomaly:
+            pre_start = max(0, step - pre_margin)
+            recent_entries = [
+                entry for entry in recent_entries if entry["step"] < pre_start
+            ]
+            recent_residuals = [entry["score"] for entry in recent_entries]
+            detector.reset()
+            persistence.reset()
+            blocked_until = step + post_margin
+            ema_state = None
+            trace["masked"][step] = 1
+            mask_steps.append(step)
+            continue
+
+        recent_entries.append({
+            "step": step,
+            "x": adaptation_x[step],
+            "y": adaptation_y[step],
+            "score": score,
+        })
+        max_recent = int(drift_cfg["recent_window_size"])
+        if len(recent_entries) > max_recent:
+            recent_entries.pop(0)
+        recent_residuals = [entry["score"] for entry in recent_entries]
+
+        request_action = None
+        drift_flag = False
+        if baseline_name == "B2":
+            interval = int(continual_cfg["b2_periodic_interval"])
+            if (
+                step > 0
+                and step % interval == 0
+                and len(recent_entries) >= periodic_minimum_windows
+            ):
+                request_action = "FINE_TUNE"
+        else:
+            started = time.perf_counter()
+            drift_flag = detector.update(score)
+            detection_seconds += time.perf_counter() - started
+            if drift_flag:
+                drift_alarm_steps.append(step)
+                trace["drift_alarm"][step] = 1
+                if (
+                    drift_start_window is not None
+                    and step >= drift_start_window
+                    and first_alarm_after_drift is None
+                ):
+                    first_alarm_after_drift = step
+
+            if baseline_name == "B3":
+                if drift_flag and len(recent_entries) >= minimum_candidate_windows:
+                    request_action = "FINE_TUNE"
+            else:
+                started = time.perf_counter()
+                persistence_record = persistence.update(drift_flag, step=step)
+                if len(recent_residuals) >= minimum_distribution_samples:
+                    measures = compute_all_distribution_measures(
+                        np.asarray(reference_residuals),
+                        np.asarray(recent_residuals),
+                    )
+                    severity_record = severity_calculator.compute_severity(
+                        measures, step=step
+                    )
+                    severity = float(severity_record["severity"])
+                    normalized = severity_record["normalized"]
+                else:
+                    measures = {"ks": 0.0, "wasserstein": 0.0, "js": 0.0}
+                    normalized = {"ks": 0.0, "wasserstein": 0.0, "js": 0.0}
+                    severity = 0.0
+
+                if not use_severity:
+                    severity = 1.0 if drift_flag else 0.0
+                    normalized = {"ks": severity, "wasserstein": severity, "js": severity}
+                trace["severity"][step] = severity
+
+                degradation_record = degradation.evaluate_residual_degradation(
+                    np.asarray(recent_residuals), step=step
+                )
+                persistence_passed = (
+                    persistence_record["is_persistent"]
+                    if use_persistence
+                    else bool(drift_flag)
+                )
+                degradation_passed = (
+                    degradation_record["is_significant_degradation"]
+                    if use_degradation
+                    else bool(drift_flag)
+                )
+                decision = engine.decide(
+                    step=step,
+                    timestamp_utc=str(step),
+                    drift_detected=drift_flag,
+                    detector_name="ADWIN",
+                    raw_measures=measures,
+                    normalized_measures=normalized,
+                    severity=severity,
+                    persistence_count=(
+                        persistence_record["persistence_count"]
+                        if use_persistence else int(bool(drift_flag))
+                    ),
+                    persistence_passed=persistence_passed,
+                    degradation_value=(
+                        degradation_record["relative_degradation"]
+                        if use_degradation
+                        else float(drift_cfg["degradation_threshold_delta_q"]) + 1.0
+                        if drift_flag else 0.0
+                    ),
+                    degradation_passed=degradation_passed,
+                )
+                decision_seconds += time.perf_counter() - started
+                if decision.action == AdaptationAction.STRONG_UPDATE:
+                    request_action = "STRONG_UPDATE"
+                elif decision.action == AdaptationAction.FINE_TUNE:
+                    request_action = "FINE_TUNE"
+
+        if request_action is None or len(recent_entries) < minimum_candidate_windows:
+            continue
+        request_count += 1
+        trace["action"][step] = request_action
+        if (
+            drift_start_window is not None
+            and step >= drift_start_window
+            and first_decision_step is None
+        ):
+            first_decision_step = step
+
+        candidate_x = np.stack([entry["x"] for entry in recent_entries])
+        candidate_y = np.stack([entry["y"] for entry in recent_entries])
+        is_strong = request_action == "STRONG_UPDATE"
+        training_started = time.perf_counter()
+        candidate_model, candidate_metadata, _ = trainer.create_candidate(
+            current_model,
+            candidate_x,
+            candidate_y,
+            action_type=request_action,
+            epochs=int(
+                continual_cfg["strong_epochs"]
+                if is_strong else continual_cfg["finetune_epochs"]
+            ),
+            lr=float(
+                continual_cfg["strong_lr"]
+                if is_strong else continual_cfg["finetune_lr"]
+            ),
+            replay_ratio=float(continual_cfg["replay_ratio"]),
+            batch_size=int(model_cfg["batch_size"]),
+        )
+        training_seconds += time.perf_counter() - training_started
+
+        validation_started = time.perf_counter()
+        result = validation_gate.evaluate_candidate(
+            current_model, candidate_model, candidate_metadata
+        )
+        validation_seconds += time.perf_counter() - validation_started
+        if not result.accepted:
+            continue
+
+        current_model = candidate_model
+        update_counts[request_action] += 1
+        for entry in recent_entries:
+            replay.add(entry["x"], entry["y"], is_anomaly_masked=False)
+        reference_residuals = list(recent_residuals)
+        if step + 1 < len(adaptation_x):
+            remaining_scores, inference_seconds = score_model_on_windows(
+                current_model,
+                adaptation_x[step + 1:],
+                adaptation_y[step + 1:],
+                device,
+                int(model_cfg["batch_size"]),
+            )
+            cached_scores[step + 1:] = remaining_scores
+            trace["raw_mse"][step + 1:] = remaining_scores
+            adaptation_inference_seconds += inference_seconds
+
+    evaluation_started = time.perf_counter()
+    event_metrics, test_predictions, evaluation_inference_seconds = _evaluate_frozen_model(
+        current_model, scenario_data, cfg, device
+    )
+    evaluation_seconds = time.perf_counter() - evaluation_started
+    gate_summary = validation_gate.get_summary()
+    total_updates = sum(update_counts.values())
+    harmless_scenario = scenario_id in {1, 2, 4}
+    delay_windows = (
+        first_decision_step - drift_start_window
+        if first_decision_step is not None and drift_start_window is not None
+        else None
+    )
+
+    return {
+        "name": baseline_name,
+        "ablation_variant": ablation_variant,
+        "event_metrics": event_metrics,
+        "updates": total_updates,
+        "fine_tune_updates": update_counts["FINE_TUNE"],
+        "strong_updates": update_counts["STRONG_UPDATE"],
+        "update_requests": request_count,
+        "unnecessary_updates": total_updates if harmless_scenario else 0,
+        "updates_during_stable_period": total_updates if scenario_id == 1 else 0,
+        "updates_during_temporary_period": total_updates if scenario_id == 2 else 0,
+        "updates_during_large_harmless_period": total_updates if scenario_id == 4 else 0,
+        "candidates_accepted": int(gate_summary["accepted_count"]),
+        "candidates_rejected": int(gate_summary["rejected_count"]),
+        "drift_detections": len(drift_alarm_steps),
+        "masked_windows": len(mask_steps),
+        "first_adaptation_delay_windows": delay_windows,
+        "first_alarm_delay_windows": (
+            first_alarm_after_drift - drift_start_window
+            if first_alarm_after_drift is not None and drift_start_window is not None
+            else None
+        ),
+        "runtime_total": time.perf_counter() - simulation_started,
+        "runtime_adaptation_inference": adaptation_inference_seconds,
+        "runtime_evaluation_inference": evaluation_inference_seconds,
+        "runtime_detection": detection_seconds,
+        "runtime_decision": decision_seconds,
+        "runtime_training": training_seconds,
+        "runtime_validation": validation_seconds,
+        "runtime_final_evaluation": evaluation_seconds,
+        "test_predictions": test_predictions,
+        "trace": trace,
+    }
 
 
 def run_benchmark_for_scenario(
@@ -90,284 +726,72 @@ def run_benchmark_for_scenario(
     device: torch.device,
     initial_checkpoint_path: Path,
 ) -> Dict[str, Any]:
-    """Run B1, B2, B3, B4 on a single drift scenario on Mission 1."""
-    m_cfg = cfg["model"]
-    a_cfg = cfg["anomaly"]
-    d_cfg = cfg["drift"]
-    c_cfg = cfg["continual"]
+    """Compare B1-B4 on the same scenario with no test-time model updates."""
+    from src.models.anomaly_scoring import load_forecaster
 
-    values_clean = clean_splits["values"]
-    labels_clean = clean_splits["labels"]
-    exclusion_clean = clean_splits["exclusion_mask"]
-    timestamps = clean_splits["timestamps_ns"]
-    train_bounds = clean_splits["train_bounds"].tolist()
-    val_bounds = clean_splits["validation_bounds"].tolist()
-    test_bounds = clean_splits["test_bounds"].tolist()
-
-    # Generate scenario values on test split
-    test_start, test_end = test_bounds
-    clean_test_values = values_clean[test_start:test_end].copy()
-    mod_test_values, sc_config = generate_scenario(clean_test_values, scenario_id, seed=cfg.get("seed", 42))
-
-    full_values = values_clean.copy()
-    full_values[test_start:test_end] = mod_test_values
-
-    # Pre-extract windows
-    stride = int(m_cfg.get("window_stride", 10))
-    test_starts, test_x, test_y = prepare_fast_windows(
-        full_values, (test_start, test_end), m_cfg["input_window"], m_cfg["forecast_horizon"], stride=stride
-    )
-    val_starts, val_x, val_y = prepare_fast_windows(
-        values_clean, (val_bounds[0], val_bounds[1]), m_cfg["input_window"], m_cfg["forecast_horizon"], stride=stride
-    )
-
-    test_labels = window_has_anomaly(labels_clean, test_starts, m_cfg["input_window"], m_cfg["forecast_horizon"], include_input=False)
-    test_exclusion = window_has_anomaly(exclusion_clean, test_starts, m_cfg["input_window"], m_cfg["forecast_horizon"], include_input=False)
-
+    seed = int(cfg.get("seed", 42))
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
     base_model = load_forecaster(initial_checkpoint_path, device)
-    val_scores, _ = score_model_on_windows(base_model, val_x, val_y, device)
-    val_bad = window_has_anomaly(clean_splits["exclusion_mask"], val_starts, m_cfg["input_window"], m_cfg["forecast_horizon"], include_input=True)
-    val_ema = ema_reset_on_excluded(val_scores, ~val_bad, a_cfg["ema_alpha"])
-    norm_val_scores = val_ema[np.isfinite(val_ema)]
-    threshold = float(np.quantile(norm_val_scores, a_cfg["threshold_quantile"]))
-
-    # Prepare Replay Buffer seeded from training data
-    replay_seed_buffer = ReplayBuffer(capacity=c_cfg["replay_capacity"], seed=cfg.get("seed", 42))
-    replay_seed_buffer.populate_from_training_split(
-        values_clean, clean_splits["exclusion_mask"],
-        train_bounds[0], train_bounds[1],
-        m_cfg["input_window"], m_cfg["forecast_horizon"],
-        stride=50, max_samples=300
+    scenario_data = prepare_scenario_data(
+        scenario_id, cfg, clean_splits, base_model, device
     )
 
-    results = {"scenario": sc_config.to_dict(), "baselines": {}}
+    train_start, train_end = map(int, clean_splits["train_bounds"])
+    replay_seed = ReplayBuffer(
+        capacity=int(cfg["continual"]["replay_capacity"]), seed=seed
+    )
+    replay_seed.populate_from_training_split(
+        clean_splits["values"],
+        clean_splits["exclusion_mask"],
+        train_start,
+        train_end,
+        int(cfg["model"]["input_window"]),
+        int(cfg["model"]["forecast_horizon"]),
+        stride=max(1, int(cfg["model"].get("window_stride", 1)) * 5),
+        max_samples=min(300, int(cfg["continual"]["replay_capacity"])),
+    )
+    if replay_seed.size() == 0:
+        raise ValueError("No eligible training windows are available for replay.")
 
-    # -------------------------------------------------------------
-    # B1: Static LSTM Baseline
-    # -------------------------------------------------------------
-    b1_start_t = time.perf_counter()
-    b1_raw, b1_inf_t = score_model_on_windows(base_model, test_x, test_y, device)
-    b1_ema = ema_reset_on_excluded(b1_raw, ~test_exclusion, a_cfg["ema_alpha"])
-    b1_pred = (b1_ema > threshold) & np.isfinite(b1_ema)
-    b1_event = compute_event_metrics(test_labels, b1_pred)
-    b1_total_t = time.perf_counter() - b1_start_t
-
+    results: Dict[str, Any] = {
+        "scenario": scenario_data["scenario"],
+        "baselines": {},
+    }
+    b1_started = time.perf_counter()
+    b1_model = copy.deepcopy(base_model)
+    b1_metrics, b1_predictions, b1_inference = _evaluate_frozen_model(
+        b1_model, scenario_data, cfg, device
+    )
     results["baselines"]["B1"] = {
         "name": "B1 - Static LSTM",
-        "event_metrics": b1_event,
+        "event_metrics": b1_metrics,
         "updates": 0,
+        "fine_tune_updates": 0,
+        "strong_updates": 0,
+        "update_requests": 0,
+        "unnecessary_updates": 0,
+        "updates_during_stable_period": 0,
+        "updates_during_temporary_period": 0,
+        "updates_during_large_harmless_period": 0,
         "candidates_accepted": 0,
         "candidates_rejected": 0,
-        "unnecessary_updates": 0,
-        "runtime_total": b1_total_t,
-        "runtime_inference": b1_inf_t,
-        "runtime_training": 0.0,
-        "final_model_val_loss": float(np.mean(val_scores)),
+        "runtime_total": time.perf_counter() - b1_started,
+        "runtime_evaluation_inference": b1_inference,
+        "test_predictions": b1_predictions,
     }
 
-    # -------------------------------------------------------------
-    # Adaptive Stream Simulation Helper (B2, B3, B4)
-    # -------------------------------------------------------------
-    def run_adaptive_stream(baseline_name: str) -> Dict[str, Any]:
-        sim_start_t = time.perf_counter()
-        t_detect = 0.0
-        t_decision = 0.0
-        t_train = 0.0
-        t_val = 0.0
-
-        current_model = copy.deepcopy(base_model)
-        val_gate = ValidationGate(val_x, val_y, device, tolerance=c_cfg["validation_tolerance"])
-        replay = copy.deepcopy(replay_seed_buffer)
-        trainer = CandidateTrainer(base_model, device, replay, resolve_path(cfg["output"]["model_dir"]) / "candidates")
-
-        detector = ADWIN(delta=d_cfg["adwin_delta"])
-        persistence = PersistenceTracker(window_k=d_cfg["persistence_window_k"], min_detections=d_cfg["persistence_min"])
-        severity_calc = SeverityCalculator(weights=d_cfg["severity_weights"])
-        severity_calc.calibrate_from_normal_validation(norm_val_scores)
-        degradation_tracker = DegradationTracker(
-            reference_f05=b1_event["f0.5_event"],
-            degradation_threshold_delta_q=d_cfg["degradation_threshold_delta_q"],
-            reference_mse=float(np.mean(norm_val_scores))
+    for baseline_name in ("B2", "B3", "B4"):
+        results["baselines"][baseline_name] = run_adaptive_simulation(
+            baseline_name,
+            scenario_id,
+            scenario_data,
+            cfg,
+            device,
+            base_model,
+            replay_seed,
         )
-        engine = DecisionEngine(
-            theta_low=d_cfg["theta_low"],
-            theta_high=d_cfg["theta_high"],
-            persistence_min=d_cfg["persistence_min"],
-            degradation_threshold=d_cfg["degradation_threshold_delta_q"]
-        )
-
-        n_steps = len(test_x)
-        # Pre-score all windows with initial model for speed
-        cached_scores, inf_time = score_model_on_windows(current_model, test_x, test_y, device)
-        stream_pred = np.zeros(n_steps, dtype=bool)
-        current_ema = 0.0
-        first_step = True
-
-        updates_applied = 0
-        fine_tune_count = 0
-        strong_update_count = 0
-        unnecessary_updates = 0
-        drift_detections_count = 0
-        recent_buffer_x = []
-        recent_buffer_y = []
-        recent_residuals = []
-        reference_residuals = list(norm_val_scores[:200])
-
-        b2_periodic_interval = c_cfg.get("b2_periodic_interval", 1000)
-
-        for step in range(n_steps):
-            mse_w = float(cached_scores[step])
-
-            # Proper EMA with configured ema_alpha
-            alpha = float(a_cfg["ema_alpha"])
-            if test_exclusion[step]:
-                current_ema = np.nan
-                first_step = True
-            else:
-                if first_step or np.isnan(current_ema):
-                    current_ema = mse_w
-                    first_step = False
-                else:
-                    current_ema = alpha * mse_w + (1.0 - alpha) * current_ema
-
-            is_pred_anom = bool(current_ema > threshold) if np.isfinite(current_ema) else False
-            stream_pred[step] = is_pred_anom
-
-            # Candidate sample eligibility
-            is_masked = bool(test_exclusion[step] or is_pred_anom)
-            if not is_masked:
-                recent_buffer_x.append(test_x[step])
-                recent_buffer_y.append(test_y[step])
-                recent_residuals.append(mse_w)
-                if len(recent_buffer_x) > d_cfg["recent_window_size"]:
-                    recent_buffer_x.pop(0)
-                    recent_buffer_y.pop(0)
-                    recent_residuals.pop(0)
-
-            # Adaptation trigger logic
-            req_action = None
-
-            if baseline_name == "B2":
-                if step > 0 and step % b2_periodic_interval == 0 and len(recent_buffer_x) >= 50:
-                    req_action = "FINE_TUNE"
-
-            elif baseline_name == "B3":
-                t0_det = time.perf_counter()
-                drift_flag = detector.update(mse_w)
-                t_detect += time.perf_counter() - t0_det
-                if drift_flag:
-                    drift_detections_count += 1
-                    if len(recent_buffer_x) >= 30:
-                        req_action = "FINE_TUNE"
-
-            elif baseline_name == "B4":
-                t0_det = time.perf_counter()
-                if not is_masked:
-                    drift_flag = detector.update(mse_w)
-                else:
-                    drift_flag = False
-                t_detect += time.perf_counter() - t0_det
-
-                if drift_flag:
-                    drift_detections_count += 1
-
-                t0_dec = time.perf_counter()
-                pers_rec = persistence.update(drift_flag, step=step)
-
-                if len(recent_residuals) >= 20:
-                    raw_measures = compute_all_distribution_measures(
-                        np.array(reference_residuals), np.array(recent_residuals)
-                    )
-                    sev_rec = severity_calc.compute_severity(raw_measures, step=step)
-                    severity_val = sev_rec["severity"]
-                else:
-                    raw_measures = {"ks": 0.0, "wasserstein": 0.0, "js": 0.0}
-                    sev_rec = {"normalized": {"ks": 0.0, "wasserstein": 0.0, "js": 0.0}}
-                    severity_val = 0.0
-
-                deg_rec = degradation_tracker.evaluate_residual_degradation(np.array(recent_residuals), step=step)
-
-                decision = engine.decide(
-                    step=step,
-                    timestamp_utc=str(timestamps[test_starts[step]]),
-                    drift_detected=drift_flag,
-                    detector_name="ADWIN",
-                    raw_measures=raw_measures,
-                    normalized_measures=sev_rec["normalized"],
-                    severity=severity_val,
-                    persistence_count=pers_rec["persistence_count"],
-                    persistence_passed=pers_rec["is_persistent"],
-                    degradation_value=deg_rec["relative_degradation"],
-                    degradation_passed=deg_rec["is_significant_degradation"],
-                )
-                t_decision += time.perf_counter() - t0_dec
-
-                if decision.action == AdaptationAction.STRONG_UPDATE:
-                    req_action = "STRONG_UPDATE"
-                elif decision.action == AdaptationAction.FINE_TUNE:
-                    req_action = "FINE_TUNE"
-
-            # Candidate Generation & Validation Gate
-            if req_action is not None and len(recent_buffer_x) >= 30:
-                t0_tr = time.perf_counter()
-                cand_x = np.stack(recent_buffer_x, axis=0)
-                cand_y = np.stack(recent_buffer_y, axis=0)
-                cand_model, cand_meta, _ = trainer.create_candidate(
-                    current_model, cand_x, cand_y, action_type=req_action
-                )
-                t_train += time.perf_counter() - t0_tr
-
-                t0_vg = time.perf_counter()
-                eval_res = val_gate.evaluate_candidate(current_model, cand_model, cand_meta)
-                t_val += time.perf_counter() - t0_vg
-
-                if eval_res.accepted:
-                    current_model = cand_model
-                    updates_applied += 1
-                    if req_action == "STRONG_UPDATE":
-                        strong_update_count += 1
-                    else:
-                        fine_tune_count += 1
-
-                    for rx, ry in zip(recent_buffer_x, recent_buffer_y):
-                        replay.add(rx, ry, is_anomaly_masked=False)
-
-                    reference_residuals = list(recent_residuals)
-
-                    # Re-score future remaining windows with accepted model
-                    if step + 1 < n_steps:
-                        rem_scores, _ = score_model_on_windows(
-                            current_model, test_x[step + 1 :], test_y[step + 1 :], device
-                        )
-                        cached_scores[step + 1 :] = rem_scores
-
-                    if scenario_id in [1, 4]:
-                        unnecessary_updates += 1
-
-        ev_metrics = compute_event_metrics(test_labels, stream_pred)
-        gate_summary = val_gate.get_summary()
-        tot_runtime = time.perf_counter() - sim_start_t
-
-        return {
-            "name": baseline_name,
-            "event_metrics": ev_metrics,
-            "updates": updates_applied,
-            "fine_tune_count": fine_tune_count,
-            "strong_update_count": strong_update_count,
-            "drift_detections": drift_detections_count,
-            "candidates_accepted": gate_summary["accepted_count"],
-            "candidates_rejected": gate_summary["rejected_count"],
-            "unnecessary_updates": unnecessary_updates,
-            "runtime_total": tot_runtime,
-            "runtime_detection": t_detect,
-            "runtime_decision": t_decision,
-            "runtime_training": t_train,
-            "runtime_validation": t_val,
-        }
-
-    # Execute B2, B3, B4
-    results["baselines"]["B2"] = run_adaptive_stream("B2")
-    results["baselines"]["B3"] = run_adaptive_stream("B3")
-    results["baselines"]["B4"] = run_adaptive_stream("B4")
-
     return results
