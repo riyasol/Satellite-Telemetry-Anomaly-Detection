@@ -1,8 +1,8 @@
-# Spacecraft Telemetry — Person 1 Implementation
+# Satellite Telemetry Anomaly Detection — Integrated Mission 1 Pipeline
 
-This project prepares the selected ESA-ADB channels and implements Person 1's
-static LSTM forecasting baseline (B1), residual scoring, EMA, thresholding,
-and evaluation.
+The integrated P1/P2/P3 project prepares ESA-ADB Mission 1 data, trains or
+loads the static LSTM baseline (B1), detects streaming drift, and evaluates
+safe continual-learning candidates against B1-B4 on controlled scenarios.
 
 ## Selected channels
 
@@ -12,7 +12,8 @@ Sampling interval is 30 s nominal (observation index based).
 
 ## Before running
 
-1. Keep the official extracted folders under `data/raw/ESA-Mission1`.
+1. Keep the official extracted folders under `data/raw/ESA-Mission1` if
+   preparing data or training B1 from scratch.
 2. Review `config/config.yaml`.
 3. Mission 1 uses 112 days (16-week block starting 2011-01-15T00:00:00Z) with 322,560 samples.
 5. **Confirm the professor-approved pre/post anomaly masking margins.** The
@@ -83,16 +84,16 @@ used by the ESA pipeline.
 ## P1 ESA data contract
 
 P1 owns loading, preprocessing, label separation, split construction, window
-eligibility and data-integrity validation. P2 owns the final streaming
-`DecisionPacket`. P3 owns replay and candidate training.
+eligibility and data-integrity validation. P2 owns streaming drift detection
+and update decisions. P3 owns replay, candidate training, validation gating,
+and the held-out benchmark protocol.
 
 ### Required local ESA assets
 
-Place trusted ESA-ADB archives locally under:
+Place the trusted ESA-ADB archive locally under:
 
 ```text
 data/raw/ESA-Mission1/
-data/raw/ESA-Mission2/
 ```
 
 Do not commit `data/`, raw channel ZIPs, `*.npz`, `*.npy`, virtual
@@ -161,3 +162,39 @@ P1 provides P2/P3 with:
 - validity
 - eligibility
 - mask reason
+
+## Integrated P1/P2/P3 experiment run
+
+From `Person1_Handover`, install dependencies and provide the Mission 1
+processed split and B1 checkpoint. Do not commit the data or checkpoint:
+
+```text
+data/processed/esa_adb/mission1/splits.npz
+results/models/mission1/lstm_b1.pt
+```
+
+Then run:
+
+```powershell
+python -m pip install -r requirements.txt
+python run_project.py
+```
+
+The runner executes the combined P1/P2/P3 tests, B1 evaluation, B1-B4
+comparisons over five controlled scenarios, component ablations, and the
+diagnostic timeline. Main deliverables are:
+
+- `results/mission1/b1_metrics.json` and `b1_scores.csv`
+- `results/mission1/b1_b4_scenario_comparison.csv`
+- `results/mission1/ablation_study_results.csv` and `masking_ablation_results.csv`
+- `results/plots/mission1/` comparison, ablation, masking, baseline, and timeline plots
+
+For Kaggle, copy the supplied `splits.npz` and `lstm_b1.pt` into the paths above
+before running. The benchmark does not retrain B1; it trains only candidates
+that pass the P3 validation gate. Adaptation uses validation data only, and the
+test split is reserved for final evaluation.
+
+The event-tolerance setting and anomaly-mask thresholds are provisional. Treat
+the generated metrics as measured results, not proof of superiority over a
+paper: make that claim only after the scenarios demonstrate valid, reproducible
+improvement against the cited paper's protocol and baselines.

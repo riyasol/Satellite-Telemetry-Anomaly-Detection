@@ -76,6 +76,12 @@ def _result_row(
         "updates_during_large_harmless_period":
             result.get("updates_during_large_harmless_period", 0),
         "drift_detections": result.get("drift_detections", 0),
+        "confirmed_drift_detections":
+            result.get("confirmed_drift_detections", 0),
+        "mask_suppressed_detections":
+            result.get("mask_suppressed_detections", 0),
+        "insufficient_evidence_suppressions":
+            result.get("insufficient_evidence_suppressions", 0),
         "masked_windows": result.get("masked_windows", 0),
         "candidates_accepted": result.get("candidates_accepted", 0),
         "candidates_rejected": result.get("candidates_rejected", 0),

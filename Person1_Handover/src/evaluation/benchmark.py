@@ -17,6 +17,7 @@ from src.continual.validation_gate import ValidationGate
 from src.drift.decision_engine import AdaptationAction, DecisionEngine
 from src.drift.degradation import DegradationTracker
 from src.drift.distribution_measures import compute_all_distribution_measures
+from src.drift.anomaly_masker import confirm_adwin_alarm
 from src.drift.persistence import PersistenceTracker
 from src.drift.severity import SeverityCalculator
 from src.drift.streaming_detectors import ADWIN
@@ -444,6 +445,19 @@ def run_adaptive_simulation(
     use_severity = ablation_variant != "No_Severity"
     use_persistence = ablation_variant != "No_Persistence"
     use_degradation = ablation_variant != "No_Degradation"
+    mask_dominance_threshold = float(
+        drift_cfg.get("mask_dominance_threshold", 0.75)
+    )
+    min_clean_reference_samples = int(
+        drift_cfg.get("min_clean_reference_samples", 20)
+    )
+    min_clean_recent_samples = int(
+        drift_cfg.get("min_clean_recent_samples", 20)
+    )
+    if not 0.0 <= mask_dominance_threshold <= 1.0:
+        raise ValueError("drift.mask_dominance_threshold must be between 0 and 1.")
+    if min_clean_reference_samples <= 0 or min_clean_recent_samples <= 0:
+        raise ValueError("Minimum clean ADWIN sample counts must be positive.")
     adaptation_x = scenario_data["adaptation_x"]
     adaptation_y = scenario_data["adaptation_y"]
     cached_scores, adaptation_inference_seconds = score_model_on_windows(
@@ -461,7 +475,11 @@ def run_adaptive_simulation(
     update_counts = {"FINE_TUNE": 0, "STRONG_UPDATE": 0}
     request_count = 0
     drift_alarm_steps = []
-    mask_steps = []
+    confirmed_drift_steps = []
+    mask_suppression_count = 0
+    insufficient_evidence_count = 0
+    masked_window_indices = set()
+    predicted_mask_by_stream_index = np.zeros(len(cached_scores), dtype=bool)
     first_decision_step = None
     first_alarm_after_drift = None
     training_seconds = 0.0
@@ -472,7 +490,10 @@ def run_adaptive_simulation(
         "raw_mse": cached_scores.copy(),
         "predicted_anomaly": np.zeros(len(cached_scores), dtype=np.uint8),
         "masked": np.zeros(len(cached_scores), dtype=np.uint8),
+        "raw_adwin_alarm": np.zeros(len(cached_scores), dtype=np.uint8),
         "drift_alarm": np.zeros(len(cached_scores), dtype=np.uint8),
+        "mask_dominance_fraction": np.zeros(len(cached_scores), dtype=np.float32),
+        "suppression_reason": np.full(len(cached_scores), "none", dtype=object),
         "severity": np.zeros(len(cached_scores), dtype=np.float32),
         "action": np.full(len(cached_scores), "NO_UPDATE", dtype=object),
     }
@@ -484,12 +505,48 @@ def run_adaptive_simulation(
         pre_margin = int(scenario_data["pre_margin_windows"])
         post_margin = int(scenario_data["post_margin_windows"])
 
+    def update_b4_detector(step: int, score: float) -> Tuple[bool, Optional[Dict[str, Any]]]:
+        nonlocal detection_seconds
+        nonlocal mask_suppression_count, insufficient_evidence_count
+
+        started = time.perf_counter()
+        raw_alarm = detector.update(score, stream_index=step)
+        detection_seconds += time.perf_counter() - started
+        if not raw_alarm:
+            return False, None
+
+        drift_alarm_steps.append(step)
+        trace["raw_adwin_alarm"][step] = 1
+        confirmation = confirm_adwin_alarm(
+            detector.last_cut_window,
+            np.asarray(detector.last_cut_window_idx, dtype=np.int64),
+            predicted_mask_by_stream_index,
+            detector.last_cut_point,
+            mask_dominance_threshold,
+            min_clean_reference_samples,
+            min_clean_recent_samples,
+        )
+        trace["mask_dominance_fraction"][step] = float(
+            confirmation["anomaly_mask_fraction"]
+        )
+        trace["suppression_reason"][step] = confirmation["suppression_reason"]
+        if confirmation["drift_confirmed"]:
+            confirmed_drift_steps.append(step)
+        elif confirmation["suppression_reason"] == "anomaly_mask_dominance":
+            mask_suppression_count += 1
+        elif confirmation["suppression_reason"].startswith("insufficient_clean"):
+            insufficient_evidence_count += 1
+        return bool(confirmation["drift_confirmed"]), confirmation
+
     for step in range(len(adaptation_x)):
         score = float(cached_scores[step])
         if use_masking and step <= blocked_until:
             ema_state = None
             trace["masked"][step] = 1
-            mask_steps.append(step)
+            predicted_mask_by_stream_index[step] = True
+            masked_window_indices.add(step)
+            if baseline_name == "B4":
+                update_b4_detector(step, score)
             continue
 
         alpha = float(anomaly_cfg["ema_alpha"])
@@ -503,12 +560,17 @@ def run_adaptive_simulation(
                 entry for entry in recent_entries if entry["step"] < pre_start
             ]
             recent_residuals = [entry["score"] for entry in recent_entries]
-            detector.reset()
+            mask_end = min(len(cached_scores), step + post_margin + 1)
+            predicted_mask_by_stream_index[pre_start:mask_end] = True
+            trace["masked"][pre_start:mask_end] = 1
+            masked_window_indices.update(range(pre_start, mask_end))
+            if baseline_name != "B4":
+                detector.reset()
             persistence.reset()
             blocked_until = step + post_margin
             ema_state = None
-            trace["masked"][step] = 1
-            mask_steps.append(step)
+            if baseline_name == "B4":
+                update_b4_detector(step, score)
             continue
 
         recent_entries.append({
@@ -532,12 +594,24 @@ def run_adaptive_simulation(
                 and len(recent_entries) >= periodic_minimum_windows
             ):
                 request_action = "FINE_TUNE"
+        elif baseline_name == "B4":
+            drift_flag, b4_confirmation = update_b4_detector(step, score)
+            if drift_flag:
+                trace["drift_alarm"][step] = 1
+                if (
+                    drift_start_window is not None
+                    and step >= drift_start_window
+                    and first_alarm_after_drift is None
+                ):
+                    first_alarm_after_drift = step
         else:
             started = time.perf_counter()
-            drift_flag = detector.update(score)
+            drift_flag = detector.update(score, stream_index=step)
             detection_seconds += time.perf_counter() - started
             if drift_flag:
                 drift_alarm_steps.append(step)
+                confirmed_drift_steps.append(step)
+                trace["raw_adwin_alarm"][step] = 1
                 trace["drift_alarm"][step] = 1
                 if (
                     drift_start_window is not None
@@ -546,71 +620,94 @@ def run_adaptive_simulation(
                 ):
                     first_alarm_after_drift = step
 
-            if baseline_name == "B3":
-                if drift_flag and len(recent_entries) >= minimum_candidate_windows:
-                    request_action = "FINE_TUNE"
+        if baseline_name == "B3":
+            if drift_flag and len(recent_entries) >= minimum_candidate_windows:
+                request_action = "FINE_TUNE"
+        elif baseline_name == "B4":
+            started = time.perf_counter()
+            persistence_record = persistence.update(drift_flag, step=step)
+            distribution_reference = reference_residuals
+            distribution_recent = recent_residuals
+            if drift_flag and b4_confirmation is not None:
+                distribution_reference = b4_confirmation["reference"]
+                distribution_recent = b4_confirmation["recent"]
+            if len(distribution_recent) >= minimum_distribution_samples:
+                measures = compute_all_distribution_measures(
+                    np.asarray(distribution_reference),
+                    np.asarray(distribution_recent),
+                )
+                severity_record = severity_calculator.compute_severity(
+                    measures, step=step
+                )
+                severity = float(severity_record["severity"])
+                normalized = severity_record["normalized"]
             else:
-                started = time.perf_counter()
-                persistence_record = persistence.update(drift_flag, step=step)
-                if len(recent_residuals) >= minimum_distribution_samples:
-                    measures = compute_all_distribution_measures(
-                        np.asarray(reference_residuals),
-                        np.asarray(recent_residuals),
-                    )
-                    severity_record = severity_calculator.compute_severity(
-                        measures, step=step
-                    )
-                    severity = float(severity_record["severity"])
-                    normalized = severity_record["normalized"]
-                else:
-                    measures = {"ks": 0.0, "wasserstein": 0.0, "js": 0.0}
-                    normalized = {"ks": 0.0, "wasserstein": 0.0, "js": 0.0}
-                    severity = 0.0
+                measures = {"ks": 0.0, "wasserstein": 0.0, "js": 0.0}
+                normalized = {"ks": 0.0, "wasserstein": 0.0, "js": 0.0}
+                severity = 0.0
 
-                if not use_severity:
-                    severity = 1.0 if drift_flag else 0.0
-                    normalized = {"ks": severity, "wasserstein": severity, "js": severity}
-                trace["severity"][step] = severity
+            if not use_severity:
+                severity = 1.0 if drift_flag else 0.0
+                normalized = {"ks": severity, "wasserstein": severity, "js": severity}
+            trace["severity"][step] = severity
 
-                degradation_record = degradation.evaluate_residual_degradation(
-                    np.asarray(recent_residuals), step=step
-                )
-                persistence_passed = (
-                    persistence_record["is_persistent"]
-                    if use_persistence
-                    else bool(drift_flag)
-                )
-                degradation_passed = (
-                    degradation_record["is_significant_degradation"]
+            degradation_record = degradation.evaluate_residual_degradation(
+                np.asarray(recent_residuals), step=step
+            )
+            persistence_passed = (
+                persistence_record["is_persistent"]
+                if use_persistence
+                else bool(drift_flag)
+            )
+            degradation_passed = (
+                degradation_record["is_significant_degradation"]
+                if use_degradation
+                else bool(drift_flag)
+            )
+            decision = engine.decide(
+                step=step,
+                timestamp_utc=str(step),
+                drift_detected=drift_flag,
+                detector_name="ADWIN",
+                raw_measures=measures,
+                normalized_measures=normalized,
+                severity=severity,
+                persistence_count=(
+                    persistence_record["persistence_count"]
+                    if use_persistence else int(bool(drift_flag))
+                ),
+                persistence_passed=persistence_passed,
+                degradation_value=(
+                    degradation_record["relative_degradation"]
                     if use_degradation
-                    else bool(drift_flag)
-                )
-                decision = engine.decide(
-                    step=step,
-                    timestamp_utc=str(step),
-                    drift_detected=drift_flag,
-                    detector_name="ADWIN",
-                    raw_measures=measures,
-                    normalized_measures=normalized,
-                    severity=severity,
-                    persistence_count=(
-                        persistence_record["persistence_count"]
-                        if use_persistence else int(bool(drift_flag))
-                    ),
-                    persistence_passed=persistence_passed,
-                    degradation_value=(
-                        degradation_record["relative_degradation"]
-                        if use_degradation
-                        else float(drift_cfg["degradation_threshold_delta_q"]) + 1.0
-                        if drift_flag else 0.0
-                    ),
-                    degradation_passed=degradation_passed,
-                )
-                decision_seconds += time.perf_counter() - started
-                if decision.action == AdaptationAction.STRONG_UPDATE:
-                    request_action = "STRONG_UPDATE"
-                elif decision.action == AdaptationAction.FINE_TUNE:
-                    request_action = "FINE_TUNE"
+                    else float(drift_cfg["degradation_threshold_delta_q"]) + 1.0
+                    if drift_flag else 0.0
+                ),
+                degradation_passed=degradation_passed,
+                raw_adwin_alarm=bool(trace["raw_adwin_alarm"][step]),
+                drift_confirmed=drift_flag,
+                suppression_reason=str(trace["suppression_reason"][step]),
+                anomaly_mask_fraction=float(
+                    trace["mask_dominance_fraction"][step]
+                ),
+                clean_reference_count=(
+                    int(b4_confirmation.get("reference_clean_count", 0))
+                    if b4_confirmation is not None else 0
+                ),
+                clean_recent_count=(
+                    int(b4_confirmation.get("recent_clean_count", 0))
+                    if b4_confirmation is not None else 0
+                ),
+                cut_point=(
+                    int(b4_confirmation["cut_point"])
+                    if b4_confirmation is not None else 0
+                ),
+            )
+            decision_seconds += time.perf_counter() - started
+            if decision.action == AdaptationAction.STRONG_UPDATE:
+                request_action = "STRONG_UPDATE"
+            elif decision.action == AdaptationAction.FINE_TUNE:
+                request_action = "FINE_TUNE"
 
         if request_action is None or len(recent_entries) < minimum_candidate_windows:
             continue
@@ -699,7 +796,10 @@ def run_adaptive_simulation(
         "candidates_accepted": int(gate_summary["accepted_count"]),
         "candidates_rejected": int(gate_summary["rejected_count"]),
         "drift_detections": len(drift_alarm_steps),
-        "masked_windows": len(mask_steps),
+        "confirmed_drift_detections": len(confirmed_drift_steps),
+        "mask_suppressed_detections": mask_suppression_count,
+        "insufficient_evidence_suppressions": insufficient_evidence_count,
+        "masked_windows": len(masked_window_indices),
         "first_adaptation_delay_windows": delay_windows,
         "first_alarm_delay_windows": (
             first_alarm_after_drift - drift_start_window

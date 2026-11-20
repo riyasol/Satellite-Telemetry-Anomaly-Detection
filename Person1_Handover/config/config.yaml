@@ -50,6 +50,9 @@ drift:
   persistence_window_k: 25
   persistence_min: 2
   degradation_threshold_delta_q: 0.05
+  mask_dominance_threshold: 0.75
+  min_clean_reference_samples: 20
+  min_clean_recent_samples: 20
   pre_anomaly_margin_seconds: 60
   post_anomaly_margin_seconds: 60
 continual:

@@ -130,10 +130,24 @@ def compute_event_metrics(
                 "fn_events": 0,
                 "total_true_events": 0,
                 "total_pred_events": 0,
-                "precision": 1.0,
-                "recall": 1.0,
-                "f0.5_event": 1.0,
+                "precision": None,
+                "recall": None,
+                "f0.5_event": None,
                 "false_alarm_rate": 0.0,
+                "evaluated_windows": int(valid.sum()),
+                "excluded_windows": int((~valid).sum()),
+            }
+        if true_count == 0:
+            return {
+                "tp_events": 0,
+                "fp_events": pred_count,
+                "fn_events": 0,
+                "total_true_events": 0,
+                "total_pred_events": pred_count,
+                "precision": None,
+                "recall": None,
+                "f0.5_event": None,
+                "false_alarm_rate": float(pred_count / max(1, int(valid.sum()))),
                 "evaluated_windows": int(valid.sum()),
                 "excluded_windows": int((~valid).sum()),
             }
@@ -164,13 +178,20 @@ def compute_event_metrics(
     if not true_events and not pred_events:
         return {
             "tp_events": 0, "fp_events": 0, "fn_events": 0, "total_true_events": 0,
-            "precision": 1.0, "recall": 1.0, "f0.5_event": 1.0, "false_alarm_rate": 0.0
+            "total_pred_events": 0,
+            "precision": None, "recall": None, "f0.5_event": None, "false_alarm_rate": 0.0
         }
 
     if not true_events and pred_events:
         return {
-            "tp_events": 0, "fp_events": len(pred_events), "fn_events": 0, "total_true_events": 0,
-            "precision": 0.0, "recall": 1.0, "f0.5_event": 0.0,
+            "tp_events": 0,
+            "fp_events": len(pred_events),
+            "fn_events": 0,
+            "total_true_events": 0,
+            "total_pred_events": len(pred_events),
+            "precision": None,
+            "recall": None,
+            "f0.5_event": None,
             "false_alarm_rate": float(len(pred_events) / max(1, len(y_pred)))
         }
 

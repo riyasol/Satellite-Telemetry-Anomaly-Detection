@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from src.data.esa_labels import build_point_labels
-from src.data.esa_loader import load_channel_zip, mission_channels
+from src.data.esa_loader import _timestamps_to_ns, load_channel_zip, mission_channels
 from src.data.validate_processed import validate_mission
 from src.drift.window_eligibility import (
     eligible_window_starts,
@@ -19,6 +19,11 @@ from src.utils.config import load_config
 
 
 class ESALabelsTests(unittest.TestCase):
+    def test_datetime_index_conversion_always_returns_nanoseconds(self):
+        timestamps = pd.date_range("2026-01-01", periods=2, freq="30s", tz="UTC")
+        timestamps_ns = _timestamps_to_ns(timestamps)
+        self.assertEqual(int(timestamps_ns[1] - timestamps_ns[0]), 30_000_000_000)
+
     def test_mission_channel_lists_are_stable(self):
         self.assertEqual(mission_channels("Mission1"), [
             f"channel_{i}" for i in range(41, 47)
@@ -41,7 +46,9 @@ class ESALabelsTests(unittest.TestCase):
 
     def test_exact_labels_and_expanded_mask_are_separate(self):
         timestamps = pd.date_range("2026-01-01", periods=20, freq="30s", tz="UTC")
-        timestamps_ns = timestamps.asi8
+        timestamps_ns = timestamps.to_numpy(
+            dtype="datetime64[ns]"
+        ).view(np.int64)
         with tempfile.TemporaryDirectory() as tmp:
             csv_path = Path(tmp) / "labels.csv"
             pd.DataFrame({
@@ -115,11 +122,10 @@ class OperationalIsolationTests(unittest.TestCase):
 
     def test_missing_processed_data_is_reported_as_blocked(self):
         cfg = load_config()
-        missions = cfg["data"].get("missions", ["Mission1"])
-        for mission in missions:
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg["data"]["esa_work_dir"] = str(Path(tmp) / "missing")
             with self.assertRaises(FileNotFoundError):
-                validate_mission(cfg, mission)
-            break
+                validate_mission(cfg, "Mission1")
 
 
 if __name__ == "__main__":

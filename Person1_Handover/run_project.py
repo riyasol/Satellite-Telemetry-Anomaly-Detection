@@ -43,9 +43,9 @@ def main():
     # Step 2: Run Person 2 unit & synthetic tests
     run_step(2, "Person 2 Drift & Decision Unit Tests", ["-m", "src.drift.synthetic_drift_tests"])
 
-    # Step 3: Verify P3-owned continual-learning and experiment components
-    run_step(3, "P3 Continual-Learning & Experiment Tests", [
-        "-m", "unittest", "discover", "-s", "tests", "-p", "test_p3_*.py", "-v"
+    # Step 3: Run P1 data-contract, P2 drift, and P3 continual-learning tests
+    run_step(3, "Integrated P1-P3 Test Suite", [
+        "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py", "-v"
     ])
 
     # Step 4: Run Baseline B1 Evaluation

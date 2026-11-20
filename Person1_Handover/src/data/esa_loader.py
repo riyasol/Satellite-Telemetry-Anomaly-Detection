@@ -39,6 +39,10 @@ def mission_channels(mission: str) -> list[str]:
     raise ValueError(f"Unsupported mission: {mission}")
 
 
+def _timestamps_to_ns(index: pd.DatetimeIndex) -> np.ndarray:
+    return index.to_numpy(dtype="datetime64[ns]").view(np.int64).copy()
+
+
 def load_mission_matrix(raw_root: Path, mission: str, output_dir: Path) -> dict:
     """Write aligned source channels to float32 and int64 UTC memmaps."""
     folder = raw_root / f"ESA-{mission}"
@@ -68,7 +72,7 @@ def load_mission_matrix(raw_root: Path, mission: str, output_dir: Path) -> dict:
         if canonical_index.tz is None
         else canonical_index.tz_convert("UTC")
     )
-    timestamps = canonical_index.asi8.copy()
+    timestamps = _timestamps_to_ns(canonical_index)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     matrix_path = output_dir / f"{mission.lower()}_values.npy"
@@ -98,7 +102,7 @@ def load_mission_matrix(raw_root: Path, mission: str, output_dir: Path) -> dict:
             if channel_index.tz is None
             else channel_index.tz_convert("UTC")
         )
-        if not np.array_equal(channel_index.asi8, timestamps):
+        if not np.array_equal(_timestamps_to_ns(channel_index), timestamps):
             raise ValueError(
                 f"{mission}/{channel}: timestamps differ from {channels[0]}; "
                 "do not align channels by row position"

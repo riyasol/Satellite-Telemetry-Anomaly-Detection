@@ -1,0 +1,47 @@
+{
+  "overall_status": "passed",
+  "missions": [
+    {
+      "mission": "Mission1",
+      "status": "passed",
+      "rows": 338689,
+      "channels": [
+        "channel_41",
+        "channel_42",
+        "channel_43",
+        "channel_44",
+        "channel_45",
+        "channel_46"
+      ],
+      "train_bounds": [
+        0,
+        237082
+      ],
+      "validation_bounds": [
+        237082,
+        287885
+      ],
+      "test_bounds": [
+        287885,
+        338689
+      ],
+      "labelled_observations": 924,
+      "excluded_observations": 924,
+      "median_sampling_interval_seconds": 30.0,
+      "timestamps_strictly_increasing": true,
+      "finite_values": true,
+      "checkpoint_directory_checked": "C:\\Users\\RIYA\\Desktop\\rm\\endsem\\Person1_Handover\\results\\models\\mission1"
+    }
+  ],
+  "checks": [
+    "NPZ schema",
+    "array lengths",
+    "finite telemetry",
+    "timestamp monotonicity",
+    "channel order",
+    "split bounds",
+    "exact label counts",
+    "expanded exclusion counts"
+  ],
+  "test_label_usage": "Final test labels are offline-evaluation-only and are not accepted by operational P1 interfaces."
+}
